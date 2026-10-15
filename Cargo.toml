@@ -1,11 +1,12 @@
 # Veyra workspace configuration.
 #
-# The workspace currently contains only repository tooling. Engine crates are
-# added exclusively through ADR-justified subsystem boundaries — see
-# docs/architecture/dependency-graph.md. No placeholder crates exist by design.
+# Crates are added exclusively through ADR-justified subsystem boundaries —
+# see docs/architecture/dependency-graph.md. No placeholder crates exist by
+# design. Phase 1 (roadmap) adds `veyra-gfx` (ADR-0005/0012) and
+# `veyra-shell` (ADR-0007/0012).
 [workspace]
 resolver = "3"
-members = ["tools/veyra-doctor"]
+members = ["tools/veyra-doctor", "crates/veyra-gfx", "crates/veyra-shell"]
 
 [workspace.package]
 version = "0.1.0"
@@ -28,6 +29,37 @@ all = { level = "warn", priority = -1 }
 unwrap_used = "deny"
 expect_used = "deny"
 panic = "deny"
+
+# Phase 1 dependency set — adopted per ADR-0012 (licenses verified against
+# crates.io 2026-10-15; all within the deny.toml allow-list). winit is pinned
+# exactly: the 0.31 line is still beta [E1, dependency audit §8], and
+# windowing behavior drift inside a SemVer-compatible range is exactly the
+# kind of nondeterminism the deterministic-rendering harness must not inherit.
+[workspace.dependencies]
+# ADR-0012: default-features off + explicit platform features drops winit's
+# optional Wayland client-side decorations (wayland-csd-adwaita ->
+# sctk-adwaita -> ab_glyph -> ttf-parser, flagged unmaintained by RustSec)
+# which Phase 1 does not use. rwh_06 keeps the raw-window-handle
+# integration softbuffer requires; server-side decorations / xdg-decoration
+# still apply on Wayland.
+winit = { version = "=0.30.13", default-features = false, features = [
+    "rwh_06",
+    "x11",
+    "wayland",
+    "wayland-dlopen",
+] }
+softbuffer = "0.4.8"
+png = "0.18.1"
+sha2 = "0.11.1"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", default-features = false, features = [
+    "fmt",
+    "env-filter",
+    "ansi",
+] }
+serde = { version = "1.0.229", features = ["derive"] }
+toml = "1.1.8"
+criterion = "0.8.2"
 
 [profile.release]
 lto = "thin"

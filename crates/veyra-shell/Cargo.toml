@@ -1,0 +1,47 @@
+[package]
+name = "veyra-shell"
+description = "Veyra's application shell: native window, event loop, input plumbing, screenshot harness (Phase 1)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+default-run = "veyra-shell"
+
+# Boundary justification (docs/architecture/dependency-graph.md §4): the
+# shell is a dependency-graph *root* — nothing may depend on it. It owns the
+# window/event loop (winit, an ADR-0007-sanctioned native boundary), CPU
+# buffer presentation (softbuffer, evaluated in ADR-0012), the screenshot
+# harness, the configuration schema, and the injectable frame clock.
+#
+# Roadmap phase: 1. ADR-0005, ADR-0007, ADR-0012.
+
+[dependencies]
+veyra-gfx = { path = "../veyra-gfx", version = "0.1.0" }
+winit = { workspace = true }
+softbuffer = { workspace = true }
+png = { workspace = true }
+sha2 = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde = { workspace = true }
+toml = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
+
+[[bench]]
+name = "phase1"
+harness = false
+
+[[bin]]
+name = "veyra-shell"
+path = "src/main.rs"
+
+[lib]
+name = "veyra_shell"
+path = "src/lib.rs"
+
+[lints]
+workspace = true
