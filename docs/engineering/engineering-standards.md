@@ -85,6 +85,7 @@ parser crate is not mandatory for a docs-only change.
 | Timer count per page | 10,000 | veyra-executor |
 | IPC message size | 64 MiB | veyra-ipc |
 | Storage quota | spec/phase-defined | veyra-storage |
+| Viewport dimension (window/screenshot) | 1..=16,384 per axis | veyra-shell (config), veyra-gfx (MAX_DIMENSION) |
 
 - Parse budgets (time-sliced) apply to untrusted parsing once engines
   exist; fuzzers assert "no hang" with run budgets.

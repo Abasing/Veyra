@@ -20,6 +20,9 @@ Reading order by purpose:
 [roadmap/compatibility-program.md](roadmap/compatibility-program.md) (test integration),
 [roadmap/compatibility-matrix.md](roadmap/compatibility-matrix.md) (the truth surface)
 
+**Measure / benchmark** →
+[benchmarks/baseline-2026-phase1.md](benchmarks/baseline-2026-phase1.md) (measured Phase 1 baselines, methodology)
+
 **Security** →
 [../SECURITY.md](../SECURITY.md) (reporting),
 [architecture/process-and-security-model.md](architecture/process-and-security-model.md) (threat model + invariants)
@@ -48,13 +51,15 @@ docs/
 │   ├── execution-and-web-apis.md
 │   ├── dependency-graph.md
 │   └── decision-log.md
-├── decisions/                     11 ADRs + template
+├── decisions/                     12 ADRs + template
 ├── roadmap/
 │   ├── implementation-plan.md     Phases 0–11 + acceptance criteria
 │   ├── compatibility-program.md
 │   └── compatibility-matrix.md
-└── engineering/
-    └── engineering-standards.md
+├── engineering/
+│   └── engineering-standards.md
+└── benchmarks/
+    └── baseline-2026-phase1.md    Measured Phase 1 baselines (methodology + numbers)
 ```
 
 ## Maintenance rules
@@ -65,4 +70,5 @@ docs/
   evidence invalidates a decision, a superseding ADR is written (never
   silent edits) — see decision-log rules.
 - Dates: every research claim carries its access date (source register);
-  every matrix transition carries its evidence date.
+  every matrix transition carries its evidence date. Every benchmark
+  number carries its measurement date and environment description.

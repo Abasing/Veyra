@@ -1,6 +1,6 @@
 # Implementation Plan
 
-status: Proposed (Phase 0 baseline) | last-updated: 2026-10-15 | owner: project lead
+status: Phase 1 implemented (2026-10-15) | last-updated: 2026-10-15 | owner: project lead
 
 This is an ordered implementation program. Phases are gated by acceptance
 criteria with evidence — a demo is never an exit condition. The sequence
@@ -98,6 +98,17 @@ variance across CI runners (mitigate: software rendering, fixed viewport,
 bundled fonts).
 
 **Exit conditions.** Acceptance criteria 1–4. **Dependencies.** Phase 0.
+
+> **Status (2026-10-15): implemented.** Evidence: `veyra-shell` opens a
+> window and presents the deterministic scene (smoke tests under Xvfb,
+> locally and in the CI `headless-shell` job); the screenshot CLI emits
+> PNG + canonical hash; golden fixtures are pixel-compared in CI; the
+> frame clock is injectable and sleep-free; configuration/diagnostics
+> have documented, tested behavior; measured baselines (median +
+> spread, N-run protocol) are in
+> [`../benchmarks/baseline-2026-phase1.md`](../benchmarks/baseline-2026-phase1.md).
+> The winit-beta risk was resolved by pinning stable `winit =0.30.13`
+> (ADR-0012). Matrix rows for the shell/infrastructure are updated.
 
 ---
 

@@ -155,6 +155,17 @@ scheduled check enforces liveness); **P2** = supporting/contextual.
 | E2 | https://api.github.com/repos/{owner}/{repo} | template | P1 | Repo licenses/activity (WPT, Test262, servo, html5lib-tests, quickjs-ng, Speedometer) | 2026-10-15 |
 | E3 | https://raw.githubusercontent.com/boa-dev/boa/main/README.md | verified | P1 | Boa self-description quoted in javascript-and-wasm.md | 2026-10-15 |
 | E4 | https://raw.githubusercontent.com/trynova/nova/main/README.md | verified | P2 | Nova status claims | 2026-10-15 |
+| E5 | https://crates.io/api/v1/crates/winit/0.30.13 | verified | P1 | ADR-0012: winit 0.30.13 stable (Apache-2.0, MSRV 1.70); 0.31 still beta | 2026-10-15 |
+| E6 | https://crates.io/api/v1/crates/softbuffer/0.4.8 | verified | P1 | ADR-0012: softbuffer license (MIT OR Apache-2.0), MSRV, rust-windowing maintenance | 2026-10-15 |
+| E7 | https://crates.io/api/v1/crates/png/0.18.1 | verified | P2 | ADR-0012: png license/MSRV/activity | 2026-10-15 |
+| E8 | https://crates.io/api/v1/crates/sha2/0.11.1 | verified | P2 | ADR-0012: sha2 license/MSRV/activity (RustCrypto) | 2026-10-15 |
+| E9 | https://crates.io/api/v1/crates/tracing/0.1.44 | verified | P2 | ADR-0012: tracing license/MSRV | 2026-10-15 |
+| E10 | https://crates.io/api/v1/crates/tracing-subscriber/0.3.23 | verified | P2 | ADR-0012: tracing-subscriber license/MSRV | 2026-10-15 |
+| E11 | https://crates.io/api/v1/crates/serde/1.0.229 | verified | P2 | ADR-0012: serde license/MSRV | 2026-10-15 |
+| E12 | https://index.crates.io/to/ml/toml | verified | P2 | ADR-0012: toml 1.1.8 feature/dependency surface (serde-based) | 2026-10-15 |
+| E13 | https://crates.io/api/v1/crates/criterion/0.8.2 | verified | P2 | ADR-0012: criterion license/MSRV | 2026-10-15 |
+| E14 | https://docs.rs/softbuffer/latest/softbuffer/ | verified | P1 | softbuffer API shape (generic Context/Surface, buffer format) and platform-support table | 2026-10-15 |
+| E15 | https://docs.rs/winit/0.30.13/winit/event_loop/struct.ActiveEventLoop.html | verified | P1 | winit 0.30.13 `owned_display_handle`/event-loop API used by the shell | 2026-10-15 |
 
 ## Retired during verification (probed, dead — removed from citations)
 

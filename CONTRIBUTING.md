@@ -51,6 +51,22 @@ what CI enforces.
 | `python3 -m ruff check tools/ tests/` | Python lint |
 | `python3 tools/verify_sources.py --fail-on-required` | Source-register reachability (network; run before touching `docs/research/`) |
 | `python3 tools/check_external_links.py docs/ --warn-only` | External-link hygiene (network; advisory) |
+| `cargo bench -p veyra-shell` | Criterion benchmarks (Phase 1 baselines; results in `docs/benchmarks/`) |
+
+Window smoke tests need a display server; CI runs them under `xvfb-run`.
+Locally, either use a desktop session or:
+
+```sh
+xvfb-run -a cargo test -p veyra-shell --test window_smoke
+```
+
+The screenshot/golden/CLI tests never require a display. Regenerating
+golden fixtures (deliberate act, review the diff):
+
+```sh
+VEYRA_UPDATE_GOLDEN=1 cargo test -p veyra-shell --test golden \
+    regenerates_fixtures -- --exact --ignored --nocapture
+```
 
 Rust toolchain: pinned by `rust-toolchain.toml`; `rustup` selects it
 automatically. Formatting: `rustfmt.toml` (edition 2024, width 100).

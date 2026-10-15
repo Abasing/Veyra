@@ -11,11 +11,14 @@ Chromium, Blink, or V8 as its underlying engine.
 
 > **Status: research and foundation stage — early.**
 > Veyra is an **early-stage, independently implemented browser-engine project**.
-> There is **no browser engine implemented yet**: no rendering, no JavaScript
-> execution, no web compatibility, and **not yet a usable browser**. What exists
-> today is a researched foundation — a Chromium investigation dossier, a proposed
-> architecture, a phased roadmap, and validation tooling. Do not rely on Veyra
-> for anything. Capabilities are claimed only when evidence in
+> There is **no browser engine implemented yet**: no web-content rendering,
+> no JavaScript execution, no web compatibility, and **not yet a usable
+> browser**. What exists today is a researched foundation plus the first
+> diagnostics rig — a Chromium investigation dossier, a proposed
+> architecture, a phased roadmap, validation tooling, and a native shell
+> whose window shows a deterministic **test pattern** (not web content).
+> Do not rely on Veyra for anything. Capabilities are claimed only when
+> evidence in
 > [`docs/roadmap/compatibility-matrix.md`](docs/roadmap/compatibility-matrix.md)
 > supports the claim.
 
@@ -32,12 +35,13 @@ engine on day one; execution-engine trade-offs are documented in
 | Area | State (2026-10-15) |
 |---|---|
 | Chromium research dossier (9 documents) | First pass complete — evidence-tiered, gaps documented |
-| System architecture & decision records | Proposed (11 ADRs); pre-implementation |
-| Phased implementation roadmap | Defined (Phases 0–11 with acceptance criteria) |
-| Compatibility program | Defined; matrix seeded at "Not investigated" |
+| System architecture & decision records | Proposed (12 ADRs); Phase 1 slice implemented |
+| Phased implementation roadmap | Defined (Phases 0–11); **Phase 1 implemented** |
+| Phase 1 shell (`veyra-shell`) | Native window + deterministic test pattern; headless screenshot CLI with canonical pixel hashing; golden-image CI — **diagnostics rig, not a browser** |
+| Compatibility program | Defined; matrix records Phase 1 infrastructure; web-platform rows at "Not investigated"/"Investigated" |
 | Validation tooling (`veyra-doctor`, link/source checkers) | Working; enforced in CI |
-| Browser engine (HTML/CSS/JS/network/rendering) | **Not started** |
-| Browser UI | **Not started** |
+| Browser engine (HTML/CSS/JS/network/rendering) | **Not started** (Phase 2+) |
+| Browser UI | **Not started** (Phase 10) |
 
 ## What Veyra is not
 
@@ -81,14 +85,18 @@ docs/
   decisions/       Architectural decision records (ADRs)
   roadmap/         Implementation plan, compatibility program, matrix
   engineering/     Engineering standards
+  benchmarks/      Measured performance baselines (per phase)
+crates/
+  veyra-gfx/       Pixel buffers + CPU raster surface (ADR-0005)
+  veyra-shell/     Native shell, screenshot harness, config, frame clock
 tools/
   veyra-doctor/    Rust CLI validating repo invariants (docs, claims, CI pinning)
 tests/             Python tests for repository tooling
 .github/           Workflows, issue/PR templates, dependabot
 ```
 
-Engine crates under `crates/` will be introduced only when subsystem boundaries
-are justified by an ADR — no placeholder crates exist by design.
+Further engine crates under `crates/` are introduced only when subsystem
+boundaries are justified by an ADR — no placeholder crates exist by design.
 
 ## Reading order for contributors
 
@@ -105,12 +113,23 @@ Prerequisites: a current stable Rust toolchain (pinned in `rust-toolchain.toml`)
 ```sh
 cargo fmt --all -- --check        # formatting
 cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace            # unit tests (incl. veyra-doctor self-tests)
+cargo test --workspace            # unit + integration tests (golden images, CLI, harness)
 cargo run -p veyra-doctor         # repository invariant checks (docs, claims, CI)
 python3 -m pip install pytest ruff
 python3 -m pytest tests/ -q       # tooling tests
 python3 -m ruff check tools/ tests/
 ```
+
+The Phase 1 shell, headless:
+
+```sh
+cargo run -p veyra-shell -- screenshot --output /tmp/veyra.png
+# stdout: machine-readable report incl. pixels-hash=sha256:<64 hex>
+```
+
+`veyra-shell window` opens a real native window with the diagnostic test
+pattern (requires a display server; CI runs it under Xvfb). See
+`cargo run -p veyra-shell -- --help` for the full CLI contract.
 
 CI runs exactly these checks on every push to `develop` and every PR — see
 [`CONTRIBUTING.md`](CONTRIBUTING.md#ci-workflows) for what each job validates.

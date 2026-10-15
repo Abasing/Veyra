@@ -1,12 +1,13 @@
 # Veyra System Overview
 
-status: Proposed (Phase 0) | last-updated: 2026-10-15 | derived-from: ../research/
+status: Updated (Phase 1) | last-updated: 2026-10-15 | derived-from: ../research/
 
 This document describes **Veyra's proposed** architecture — a design
-informed by the Chromium research dossier, not a description of implemented
-code. Every subsystem below has a phase in
-[`../roadmap/implementation-plan.md`](../roadmap/implementation-plan.md);
-nothing exists until its phase's acceptance criteria pass.
+informed by the Chromium research dossier. The Phase 1 slice (shell,
+CPU raster, deterministic test infrastructure) is implemented; every
+other subsystem below has a phase in
+[`../roadmap/implementation-plan.md`](../roadmap/implementation-plan.md)
+and does not exist until its phase's acceptance criteria pass.
 
 ## 1. Design goals (in priority order)
 
@@ -61,13 +62,16 @@ flowchart TD
 
 ## 3. Crate strategy (boundaries, not bloat)
 
-The workspace starts with **one crate** (`veyra-doctor`, tooling) and adds
-engine crates only at ADR-justified boundaries. Planned crates and the
-reason each deserves a boundary:
+The workspace currently contains three crates — `veyra-doctor`
+(repository tooling), `veyra-gfx`, and `veyra-shell` (the Phase 1
+executable) — and adds further engine crates only at ADR-justified
+boundaries. Planned crates and the reason each deserves a boundary:
 
 | Crate | Boundary justification | Phase |
 |---|---|---|
 | `veyra-doctor` | Repository tooling; independent of engine | 0 (exists) |
+| `veyra-gfx` | Device abstraction (CPU raster now, wgpu later) | 1 (exists — CPU surface + deterministic fixture scene; brought forward for the Phase 1 harness, ADR-0005/0012) |
+| `veyra-shell` | Window, input, screenshot harness (the Phase 1 executable) | 1 (exists) |
 | `veyra-url` | Single security-critical URL/origin authority; no other crate may parse URLs | 2 |
 | `veyra-html` | Untrusted-input boundary; fuzz target; isolates parser | 2 |
 | `veyra-dom` | Core data structure; depended on by everything; depends on nothing | 2 |
@@ -76,7 +80,6 @@ reason each deserves a boundary:
 | `veyra-layout` | Layout algorithms + intrinsic sizing | 3 |
 | `veyra-text` | Shaping/fonts/bidi; isolates text-stack churn | 3 |
 | `veyra-paint` | Display lists, invalidation | 3 |
-| `veyra-gfx` | Device abstraction (CPU raster now, wgpu later) | 3 |
 | `veyra-executor` | Event loop, timers, microtasks; injectable time | 4 |
 | `veyra-script` | JS engine facade (engine-swappable) | 4 |
 | `veyra-webid` | Web IDL binding layer; keeps engine types out of Web APIs | 4–5 |

@@ -1,11 +1,13 @@
 # Compatibility Matrix
 
-status: Seeded (Phase 0) | last-updated: 2026-10-15
+status: Phase 1 recorded (2026-10-15) | last-updated: 2026-10-15
 
 The single source of truth for what Veyra supports. Seeded 2026-10-15 at
-project foundation: **every row is honestly "Not investigated" or
-"Investigated" at the platform level** — no engine code exists yet.
-States are defined in the [compatibility program](compatibility-program.md);
+project foundation; Phase 1 (the shell and deterministic test
+infrastructure) is recorded below with its evidence. **No web-platform
+capability is implemented yet** — the rows below that are marked complete
+are *infrastructure* (a window, a test rig), not browser features. States
+are defined in the [compatibility program](compatibility-program.md);
 transitions cite evidence (suite runs, commits, documents).
 
 Per-area pass-rate tables and suite revisions are appended here as phases
@@ -34,6 +36,10 @@ acceptance criteria" rows, cited with the suite revision.
 
 | Area | State | Evidence / notes | Known failures | Remaining work |
 |---|---|---|---|---|
+| Native shell (window, event loop, input plumbing) | Meets defined acceptance criteria | Phase 1 (2026-10-15): winit 0.30.13 + softbuffer 0.4.8 per ADR-0012; window smoke tests pass under Xvfb locally and in the CI `headless-shell` job; clean-shutdown and no-display paths tested | Linux only so far (X11/Xvfb tested; Wayland compiled but untested; Windows/macOS untested) | Phase 4 (event-loop integration), Phase 10 (product UI) |
+| Deterministic rendering infrastructure (CPU raster, screenshot harness, golden images) | Meets defined acceptance criteria | Phase 1 (2026-10-15): `veyra-gfx` integer-only CPU raster (ADR-0005); `veyra-shell screenshot` CLI emits PNG + canonical SHA-256 (hash of the `VEYRA-CANON1` buffer form: `9e473fb9615949d9b57516dc0413bc2a2f7954f9004063db403757c0f08696d9` at 800x600, scene v1); golden fixtures reviewed and pixel-compared in CI | Linux (CI) evidence only; hash definition documented in `veyra-shell::hashing` | Phase 3 replaces the fixture scene with the display-list pipeline (rendering-pipeline.md) |
+| Injectable frame clock | Meets defined acceptance criteria | Phase 1 (2026-10-15): `FrameClock` trait with `SystemFrameClock` (production) and `FixedFrameClock` (tests); deterministic progression, zero-step rejection, and overflow tests; no wall-clock sleeps in the suite | none | Phase 4 adopts it in `veyra-executor` (rAF, timers) |
+| Configuration & diagnostics | Meets defined acceptance criteria | Phase 1 (2026-10-15): strict TOML schema (`deny_unknown_fields`, reserved `[policy]`, `schema_version` gate), tracing on stderr with documented `RUST_LOG` precedence; valid/invalid/defaults tests | none | Phase 6+ extends the reserved policy section |
 | URL parsing (WHATWG URL) | Investigated | [ST3]; `url` crate adoption planned Phase 2 (ADR-0008) | none yet (no code) | Phase 2 suite runs |
 | HTML parsing & tree construction | Investigated | [ST1]; html5lib-tests corpus selected | none yet | Phase 2 |
 | DOM core (trees, events, mutation) | Investigated | [ST2]; architecture in system-overview | none yet | Phase 2, 5 |

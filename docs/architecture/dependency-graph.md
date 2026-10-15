@@ -1,11 +1,12 @@
 # Veyra Dependency Graph
 
-status: Proposed (Phase 0) | last-updated: 2026-10-15 | companion-to: system-overview.md
+status: Updated (Phase 1) | last-updated: 2026-10-15 | companion-to: system-overview.md
 
 This document defines the **allowed dependency directions** between Veyra
 crates and the invariants that keep them honest. It is the contract CI and
 review enforce as crates appear; the graph below is the target state at
-Phase 8, not the current tree (currently: `veyra-doctor` only).
+Phase 8. Current tree (Phase 1): `veyra-doctor` (tooling), `veyra-gfx`
+(CPU raster), `veyra-shell` (application root).
 
 ## 1. Engine-crate dependency rules
 
@@ -46,6 +47,7 @@ flowchart TD
     URL["veyra-url"]
 
     SHELL --> NAV --> NET
+    SHELL --> GFX
     NAV --> URL
     NAV --> HTML
     HTML --> DOM
@@ -87,7 +89,11 @@ mechanically once `Cargo.toml` edges exist):
 6. **Untrusted-input leaf rule:** `veyra-html`, CSS parsing (in
    `veyra-style`), decoders, and IPC message decoding are leaf-ish crates
    with no privileged imports — they are the fuzz targets.
-7. **`veyra-shell` is a root** (nothing depends on it).
+7. **`veyra-shell` is a root** (nothing depends on it). In Phase 1 the
+   shell consumes `veyra-gfx` through the [`RasterSurface`] trait only —
+   the same seam the Phase 7 GPU backend plugs into (ADR-0005).
+
+[`RasterSurface`]: https://docs.rs/veyra-gfx
 
 ## 2. External dependencies (target state)
 
@@ -128,9 +134,11 @@ in the content layer until the Phase 5 binding-generator decision.
 
 Crates join this graph only at their roadmap phase, with the ADR that
 justifies the boundary cited in the crate's `Cargo.toml` header comment.
-The current tree contains `veyra-doctor` only; every row in §1's diagram
-is a target state, and the review checklist rejects PRs that add crates
-without both the roadmap phase and an ADR reference. When a boundary
+The current tree contains `veyra-doctor`, `veyra-gfx` (Phase 1, brought
+forward per roadmap — ADR-0005/0012), and `veyra-shell` (Phase 1,
+ADR-0007/0012); every other row in §1's diagram is a target state, and
+the review checklist rejects PRs that add crates without both the
+roadmap phase and an ADR reference. When a boundary
 turns out wrong in practice (cohesion signals: types imported solely to
 satisfy visibility, cyclic test helpers, duplicated data structures),
 the correction is an ADR amendment plus a re-draw of this document —

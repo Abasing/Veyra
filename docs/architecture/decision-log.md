@@ -17,6 +17,7 @@ Proposed | Accepted | Superseded(by NNNN) | Rejected.
 | [0009](../decisions/0009-webassembly-runtime.md) | WebAssembly runtime: wasmi first, wasmtime when JIT is justified | Accepted | 2026-10-15 |
 | [0010](../decisions/0010-storage-engine.md) | Storage engine: redb-based origin/partition stores | Accepted | 2026-10-15 |
 | [0011](../decisions/0011-sandbox-technology.md) | Sandboxing technology: Linux-first, Windows/macOS as recorded gaps | Accepted | 2026-10-15 |
+| [0012](../decisions/0012-phase1-shell-dependencies.md) | Phase 1 shell and test-infrastructure dependencies (winit, softbuffer, png, sha2, tracing, serde/toml, criterion) | Accepted | 2026-10-15 |
 
 ## Index
 
