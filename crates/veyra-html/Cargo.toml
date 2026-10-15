@@ -1,0 +1,32 @@
+[package]
+name = "veyra-html"
+description = "Veyra's HTML parser: html5ever tree construction feeding veyra-dom, with input limits (ADR-0003, ADR-0013)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+# Boundary justification (docs/architecture/dependency-graph.md §4/§5): veyra-html
+# is an untrusted-input leaf — bytes in, `veyra-dom` nodes out, no privileged
+# imports. The external html5ever crate is consumed only here and emits only
+# veyra-dom handles (§5 isolation table), so a parser replacement stays a
+# one-crate change (ADR-0003 reserved this decision point: "adopt crate vs
+# reimplement against html5lib-tests as oracle — made at Phase 2 with the
+# evidence bar"; the vendored html5lib tree-construction subset in tests/ is
+# that evidence).
+#
+# Roadmap phase: 2. ADR-0003 (html5ever adoption), ADR-0013 (Phase 2
+# dependency set), dependency-graph §1 (HTML node), engineering standards §6
+# (document size / attribute-text size / nesting depth limits).
+
+[dependencies]
+veyra-url = { path = "../veyra-url" }
+veyra-dom = { path = "../veyra-dom" }
+html5ever = "0.40.1"
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

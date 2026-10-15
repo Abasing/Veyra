@@ -25,6 +25,10 @@ pub const DEFAULT_MAX_NODES: usize = 2_000_000;
 /// depth is veyra-html; the DOM enforces the same bound on mutations).
 pub const DEFAULT_MAX_DEPTH: usize = 512;
 
+/// Hard ceiling for one text node's data (defense in depth behind the
+/// parser's normative 8 MiB limit — engineering standards §6).
+pub const DEFAULT_MAX_TEXT_DATA: usize = 8 * 1024 * 1024;
+
 /// Default per-node listener limit (defensive bound for the events
 /// skeleton; revisited with real event semantics in Phase 4/5).
 pub const DEFAULT_MAX_LISTENERS_PER_NODE: usize = 1_000;
@@ -38,6 +42,20 @@ pub const DEFAULT_MAX_LISTENERS_PER_NODE: usize = 1_000;
 pub struct NodeId {
     pub(crate) index: u32,
     pub(crate) generation: u64,
+}
+
+impl NodeId {
+    /// A sentinel id that is never live: every tree operation on it
+    /// reports [`DomError::StaleNodeId`] (or `None`), making it a safe
+    /// "null handle" for sinks that must return a `Handle` when the tree
+    /// cannot allocate. Compare with [`Tree::is_live`].
+    #[must_use]
+    pub const fn null() -> Self {
+        Self {
+            index: u32::MAX,
+            generation: u64::MAX,
+        }
+    }
 }
 
 /// One storage slot. `generation` increments on every free so stale ids are
@@ -323,19 +341,17 @@ impl Tree {
     /// existing nodes.
     pub fn append(&mut self, parent: NodeId, child: NodeId) -> Result<(), DomError> {
         self.check_move(parent, child)?;
-        // Height of the moved subtree must fit under the parent's depth.
+        // Height of the moved subtree must fit under the parent's depth;
+        // the limit is on ELEMENT nesting (limits table), so text children
+        // (zero height, non-element) are exempted via the depth-aware
+        // append_text path rather than this one.
         let parent_depth = self.depth(parent).unwrap_or(0);
         let child_height = self.subtree_height(child);
         if parent_depth + 1 + child_height > self.max_depth {
             return Err(DomError::HierarchyRequest);
         }
         self.unlink(child);
-        if let Some(entry) = self.entry_mut(parent) {
-            entry.children.push(child);
-        }
-        if let Some(entry) = self.entry_mut(child) {
-            entry.parent = Some(parent);
-        }
+        self.link_child(parent, child);
         Ok(())
     }
 
@@ -431,7 +447,10 @@ impl Tree {
             return Ok(last);
         }
         let text_node = self.create_text(text)?;
-        self.append(parent, text_node)?;
+        // Text does not nest: the element-depth limit does not apply to a
+        // text child (limits table: "Nesting depth (elements)").
+        self.check_move(parent, text_node)?;
+        self.link_child(parent, text_node);
         Ok(text_node)
     }
 
@@ -498,6 +517,89 @@ impl Tree {
             .iter()
             .find(|a| a.name.namespace == crate::node::Namespace::Html && a.name.local == local)
             .map(|a| a.value.as_str())
+    }
+
+    /// The value of the attribute with this exact qualified name, or
+    /// `None`. Exact matching (namespace + prefix + local) is what the
+    /// "add attributes if missing" tree-builder callback needs.
+    pub fn attribute(&self, element: NodeId, name: &crate::node::QualName) -> Option<&str> {
+        let data = self.data(element)?;
+        let NodeData::Element { attributes, .. } = data else {
+            return None;
+        };
+        attributes
+            .iter()
+            .find(|a| &a.name == name)
+            .map(|a| a.value.as_str())
+    }
+
+    /// Associates a template-contents fragment with an element (the
+    /// parser's `create_element(template)` contract; the tree builder
+    /// promises only template elements get contents).
+    ///
+    /// # Errors
+    ///
+    /// [`DomError::StaleNodeId`] for a stale id;
+    /// [`DomError::HierarchyRequest`] when the element is not an element
+    /// node or the contents node is not a fragment.
+    pub fn set_template_contents(
+        &mut self,
+        element: NodeId,
+        contents: NodeId,
+    ) -> Result<(), DomError> {
+        if !self.is_live(element) || !self.is_live(contents) {
+            return Err(DomError::StaleNodeId);
+        }
+        if !matches!(self.data(contents), Some(NodeData::Fragment)) {
+            return Err(DomError::HierarchyRequest);
+        }
+        let Some(entry) = self.entry_mut(element) else {
+            return Err(DomError::StaleNodeId);
+        };
+        let NodeData::Element {
+            template_contents, ..
+        } = &mut entry.data
+        else {
+            return Err(DomError::HierarchyRequest);
+        };
+        *template_contents = Some(contents);
+        Ok(())
+    }
+
+    /// The template-contents fragment of an element, if any.
+    pub fn template_contents(&self, element: NodeId) -> Option<NodeId> {
+        match self.data(element)? {
+            NodeData::Element {
+                template_contents, ..
+            } => *template_contents,
+            _ => None,
+        }
+    }
+
+    /// Replaces a text node's data (the DOM's `Text.data` setter, used by
+    /// the HTML parser's before-sibling text merging).
+    ///
+    /// # Errors
+    ///
+    /// [`DomError::StaleNodeId`] for a stale id;
+    /// [`DomError::HierarchyRequest`] when the node is not a text node;
+    /// [`DomError::NodeLimitExceeded`] when `data` exceeds the caller's
+    /// text-node size contract (the caller enforces the normative 8 MiB
+    /// limit; this method only guards against absurd growth).
+    pub fn set_text_data(&mut self, node: NodeId, data: String) -> Result<(), DomError> {
+        if data.len() > DEFAULT_MAX_TEXT_DATA {
+            return Err(DomError::NodeLimitExceeded {
+                max: DEFAULT_MAX_TEXT_DATA,
+            });
+        }
+        let Some(entry) = self.entry_mut(node) else {
+            return Err(DomError::StaleNodeId);
+        };
+        let NodeData::Text { data: existing } = &mut entry.data else {
+            return Err(DomError::HierarchyRequest);
+        };
+        *existing = data;
+        Ok(())
     }
 
     // -- events skeleton ------------------------------------------------------
@@ -661,6 +763,17 @@ impl Tree {
             _ => return Err(DomError::HierarchyRequest),
         }
         Ok(())
+    }
+
+    /// Links `child` as the last child of `parent` (after unlink); the
+    /// shared tail of the mutation paths.
+    fn link_child(&mut self, parent: NodeId, child: NodeId) {
+        if let Some(entry) = self.entry_mut(parent) {
+            entry.children.push(child);
+        }
+        if let Some(entry) = self.entry_mut(child) {
+            entry.parent = Some(parent);
+        }
     }
 
     /// Removes `node` from its parent's child list (if any).
