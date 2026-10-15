@@ -1,0 +1,27 @@
+[package]
+name = "veyra-dom"
+description = "Veyra's DOM core: arena tree, origin-tagged documents, mutation algorithms, events skeleton (dependency-graph §1 invariant 2)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+# Boundary justification (docs/architecture/dependency-graph.md §4): veyra-dom
+# is the system's stable core and depends on nothing in the engine except
+# veyra-url (invariant 2: "origins live on nodes"). Node storage is an
+# arena with generational ids — the shape future GC integration (Phase 5)
+# and the binding generator build on — with a normative node-count limit
+# (engineering standards §6). No external dependencies.
+#
+# Roadmap phase: 2. ADR-0003 (content layer), docs/architecture/
+# dependency-graph.md §1 (DOM node), docs/engineering/engineering-standards.md
+# §6 (node-count limit ownership).
+
+[dependencies]
+veyra-url = { path = "../veyra-url" }
+
+[dev-dependencies]
+
+[lints]
+workspace = true

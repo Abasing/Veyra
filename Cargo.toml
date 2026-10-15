@@ -11,6 +11,7 @@ members = [
     "crates/veyra-gfx",
     "crates/veyra-shell",
     "crates/veyra-url",
+    "crates/veyra-dom",
 ]
 
 [workspace.package]
