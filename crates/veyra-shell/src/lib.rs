@@ -5,10 +5,13 @@
 //! configuration, diagnostics, and the injectable frame clock that later
 //! engine phases build on.
 //!
-//! **This is not a web browser.** There is no HTML, CSS, JavaScript,
-//! networking, or web-content rendering here; the window shows a test
-//! pattern and the CLI documents exactly what it does. Capability claims
-//! live only in `docs/roadmap/compatibility-matrix.md`.
+//! Phase 2 adds the first real document pipeline — `veyra-shell open`
+//! loads URLs (or `file://` paths) through the navigation pipeline and
+//! prints DOM dumps; session history and crash-safe session persistence
+//! work. **The window still shows the diagnostic pattern**: web-content
+//! rendering (layout, text, paint) is Phase 3, and there is no CSS or
+//! JavaScript. Capability claims live only in
+//! `docs/roadmap/compatibility-matrix.md`.
 //!
 //! Module map:
 //!
@@ -23,6 +26,9 @@
 //! - [`window`] — winit event loop + softbuffer presentation.
 //! - [`hashing`] — the canonical SHA-256 definition used by golden tests.
 //! - [`golden`] — golden-fixture mechanics shared by the integration tests.
+//! - [`browser`] — the Phase 2 browser layer: navigation/session state
+//!   machine, document loading (network via `veyra-net`, `file://` local),
+//!   crash-safe session files.
 //!
 //! [`FrameClock`]: clock::FrameClock
 //! [`clock::SystemFrameClock`]: clock::SystemFrameClock
@@ -30,6 +36,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod browser;
 pub mod cli;
 pub mod clock;
 pub mod config;
@@ -65,6 +72,12 @@ pub fn execute(command: cli::Command) -> Result<(), error::ShellError> {
             output,
             expect_hash,
         } => run_screenshot_command(config, width, height, output, expect_hash),
+        cli::Command::Open {
+            urls,
+            dump_dom,
+            timeout_ms,
+            session_file,
+        } => run_open_command(&urls, dump_dom, timeout_ms, session_file),
     }
 }
 
@@ -138,5 +151,131 @@ fn run_screenshot_command(
         "{}",
         screenshot::format_report(&outcome, config.render.scene.kind())
     );
+    Ok(())
+}
+
+/// The Phase 2 `open` command: drive the navigation pipeline end-to-end.
+///
+/// Loads each URL in order through the browser layer (network via
+/// `veyra-net`, `file://` via the filesystem), commits into session
+/// history, then demonstrates history traversal (back once, forward once)
+/// when history allows — the roadmap's "navigation back/forward within
+/// session history works in the shell" acceptance item. Each visited
+/// document prints an `== <url>` marker (plus its html5lib-format DOM
+/// dump with `--dump-dom`) on stdout; per-load diagnostics go to stderr.
+/// URLs are printed only by this explicit user command, never by
+/// `tracing` diagnostics (engineering standards §10).
+///
+/// # Errors
+///
+/// Bad URL input and session-write failures are typed errors; individual
+/// load failures are reported to stderr and remembered — the command
+/// exits with the first one after the run (remaining URLs still load).
+fn run_open_command(
+    urls: &[String],
+    dump_dom: bool,
+    timeout_ms: Option<u64>,
+    session_file: Option<std::path::PathBuf>,
+) -> Result<(), error::ShellError> {
+    diag::init(config::LogLevel::Info)?;
+    let mut config = veyra_net::NetworkConfig::default();
+    if let Some(ms) = timeout_ms {
+        config.response_deadline = std::time::Duration::from_millis(ms);
+    }
+    let client = veyra_net::Client::new(config)
+        .map_err(|error| error::ShellError::Load(browser::LoadError::Network(error)))?;
+
+    let mut nav = browser::NavigationController::new();
+    let jar = veyra_net::Client::new_cookie_jar();
+    let mut first_failure: Option<String> = None;
+
+    let visit =
+        |nav: &mut browser::NavigationController, url: &str| match veyra_url::Url::parse(url) {
+            Ok(parsed) => {
+                if let Err(error) = nav.navigate(parsed.clone()) {
+                    return Err(error.to_string());
+                }
+                match browser::load_document(&parsed, &client, Some(&jar)) {
+                    Ok(document) => {
+                        let status_text = document
+                            .status
+                            .map_or_else(|| "none".to_string(), |status| status.to_string());
+                        eprintln!("loaded status={status_text} bytes={}", document.byte_len);
+                        println!("== {}", document.url.as_str());
+                        if dump_dom {
+                            print!("{}", veyra_html::dump_tree(&document.tree));
+                        }
+                        let entry = browser::SessionEntry::from_document(&document);
+                        match nav.commit(entry) {
+                            Ok(()) => Ok(()),
+                            Err(error) => Err(error.to_string()),
+                        }
+                    }
+                    Err(error) => {
+                        let _ = nav.fail();
+                        Err(error.to_string())
+                    }
+                }
+            }
+            Err(error) => Err(error.to_string()),
+        };
+
+    for url in urls {
+        if let Err(message) = visit(&mut nav, url) {
+            eprintln!("error: {message}");
+            first_failure.get_or_insert(message);
+        }
+    }
+
+    // Session-history traversal: back once, forward once, when possible.
+    if nav.can_back() {
+        match nav.go_back() {
+            Ok(target) => match browser::load_document(&target, &client, Some(&jar)) {
+                Ok(document) => {
+                    println!("== back: {}", document.url.as_str());
+                    if dump_dom {
+                        print!("{}", veyra_html::dump_tree(&document.tree));
+                    }
+                    nav.commit(browser::SessionEntry::from_document(&document))
+                        .map_err(error::ShellError::Navigation)?;
+                }
+                Err(error) => {
+                    let _ = nav.fail();
+                    eprintln!("error: back navigation load failed: {error}");
+                }
+            },
+            Err(error) => eprintln!("error: back navigation refused: {error}"),
+        }
+    }
+    if nav.can_forward() {
+        match nav.go_forward() {
+            Ok(target) => match browser::load_document(&target, &client, Some(&jar)) {
+                Ok(document) => {
+                    println!("== forward: {}", document.url.as_str());
+                    if dump_dom {
+                        print!("{}", veyra_html::dump_tree(&document.tree));
+                    }
+                    nav.commit(browser::SessionEntry::from_document(&document))
+                        .map_err(error::ShellError::Navigation)?;
+                }
+                Err(error) => {
+                    let _ = nav.fail();
+                    eprintln!("error: forward navigation load failed: {error}");
+                }
+            },
+            Err(error) => eprintln!("error: forward navigation refused: {error}"),
+        }
+    }
+
+    if let Some(path) = session_file {
+        let index = nav.current_index().unwrap_or(0);
+        let state = browser::state_from_history(nav.history(), index);
+        browser::write_session(&path, &state).map_err(error::ShellError::Session)?;
+        eprintln!("session written: {}", path.display());
+    }
+
+    if let Some(message) = first_failure {
+        return Err(error::ShellError::LoadFailed(message));
+    }
     Ok(())
 }

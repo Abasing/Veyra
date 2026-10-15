@@ -53,10 +53,13 @@ fn help_and_version_exit_zero() {
     let help = run(&["--help"]);
     assert!(help.status.success());
     let text = stdout_text(&help);
+    // The honesty gate tracks the current phase claim: Phase 2 loads and
+    // dumps documents, but the window still does not render web content.
     assert!(
-        text.contains("NOT a web browser"),
+        text.contains("does not render web content"),
         "help must be honest: {text}"
     );
+    assert!(text.contains("open"), "help must document the open command");
     assert!(text.contains("EXIT CODES"));
 
     let version = run(&["--version"]);

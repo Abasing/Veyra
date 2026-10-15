@@ -322,6 +322,14 @@ pub enum ShellError {
     Diagnostics(DiagError),
     /// Rendering failed outside the screenshot path.
     Gfx(GfxError),
+    /// Navigation/document loading failed.
+    Navigation(crate::browser::navigation::NavigationError),
+    /// A document could not be loaded.
+    Load(crate::browser::loader::LoadError),
+    /// A load failed during the `open` run (message for the first failure).
+    LoadFailed(String),
+    /// Session persistence failed.
+    Session(crate::browser::session::SessionError),
 }
 
 impl fmt::Display for ShellError {
@@ -333,6 +341,10 @@ impl fmt::Display for ShellError {
             ShellError::Clock(source) => write!(f, "frame-clock error: {source}"),
             ShellError::Diagnostics(source) => write!(f, "diagnostics error: {source}"),
             ShellError::Gfx(source) => write!(f, "rendering error: {source}"),
+            ShellError::Navigation(source) => write!(f, "navigation error: {source}"),
+            ShellError::Load(source) => write!(f, "document load failed: {source}"),
+            ShellError::LoadFailed(message) => write!(f, "document load failed: {message}"),
+            ShellError::Session(source) => write!(f, "session error: {source}"),
         }
     }
 }
@@ -346,6 +358,10 @@ impl std::error::Error for ShellError {
             ShellError::Clock(source) => Some(source),
             ShellError::Diagnostics(source) => Some(source),
             ShellError::Gfx(source) => Some(source),
+            ShellError::Navigation(source) => Some(source),
+            ShellError::Load(source) => Some(source),
+            ShellError::LoadFailed(_) => None,
+            ShellError::Session(source) => Some(source),
         }
     }
 }

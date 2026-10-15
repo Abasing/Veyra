@@ -32,6 +32,19 @@ pub enum Command {
         /// Automation hook: exit after N presented frames.
         exit_after_frames: Option<u64>,
     },
+    /// Load documents through the navigation pipeline (Phase 2): fetch
+    /// (or read file://), parse to a DOM, dump it; then exercise session
+    /// history (back/forward) and persist the session when requested.
+    Open {
+        /// URLs to visit, in order (one or more).
+        urls: Vec<String>,
+        /// Print the html5lib-format DOM dump for each visited document.
+        dump_dom: bool,
+        /// Response deadline override, milliseconds.
+        timeout_ms: Option<u64>,
+        /// Write the final session history to this file.
+        session_file: Option<PathBuf>,
+    },
     /// Headless screenshot: render → PNG + canonical hash.
     Screenshot {
         /// Optional configuration file path.
@@ -85,6 +98,7 @@ pub fn parse(args: &[String]) -> Result<ParseOutcome, UsageError> {
         "-V" | "--version" => Ok(ParseOutcome::Version(version_text())),
         "window" => parse_window(&args[1..]),
         "screenshot" => parse_screenshot(&args[1..]),
+        "open" => parse_open(&args[1..]),
         other => Err(UsageError(format!(
             "unknown command `{other}` (expected `window` or `screenshot`); \
              run `veyra-shell --help`"
@@ -197,6 +211,59 @@ fn parse_window(args: &[String]) -> Result<ParseOutcome, UsageError> {
     }))
 }
 
+/// Parses the `open` command: positional URLs plus its flags.
+fn parse_open(args: &[String]) -> Result<ParseOutcome, UsageError> {
+    let mut urls: Vec<String> = Vec::new();
+    let mut dump_dom = false;
+    let mut timeout_ms: Option<u64> = None;
+    let mut session_file: Option<PathBuf> = None;
+
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--dump-dom" => {
+                if dump_dom {
+                    return Err(UsageError("--dump-dom given twice".to_string()));
+                }
+                dump_dom = true;
+            }
+            "--timeout-ms" => {
+                let value = take_value(args, i + 1, "--timeout-ms")?;
+                let parsed = value.parse::<u64>().map_err(|_| {
+                    UsageError(format!(
+                        "--timeout-ms expects a whole number, got `{value}`"
+                    ))
+                })?;
+                set_once(&mut timeout_ms, parsed, "--timeout-ms")?;
+                i += 1;
+            }
+            "--session-file" => {
+                let value = take_value(args, i + 1, "--session-file")?;
+                set_once(&mut session_file, PathBuf::from(value), "--session-file")?;
+                i += 1;
+            }
+            other if other.starts_with('-') && other.len() > 1 => {
+                return Err(UsageError(format!(
+                    "unknown flag `{other}` for `open`; run `veyra-shell --help`"
+                )));
+            }
+            other => urls.push(other.to_string()),
+        }
+        i += 1;
+    }
+    if urls.is_empty() {
+        return Err(UsageError(
+            "open requires at least one URL (http/https/file)".to_string(),
+        ));
+    }
+    Ok(ParseOutcome::Command(Command::Open {
+        urls,
+        dump_dom,
+        timeout_ms,
+        session_file,
+    }))
+}
+
 fn parse_screenshot(args: &[String]) -> Result<ParseOutcome, UsageError> {
     let mut flags = Flags::new();
     let mut i = 0;
@@ -264,11 +331,13 @@ pub fn version_text() -> String {
 pub fn help_text() -> String {
     format!(
         "\
-veyra-shell — the Veyra application shell (Phase 1: diagnostics rig)
+veyra-shell — the Veyra application shell (Phases 1-2)
 
-This is NOT a web browser. It opens a window with a deterministic
-diagnostic test pattern and provides a headless screenshot harness.
-No HTML, CSS, JavaScript, or networking exists in this phase.
+Phase 1: a native window with a deterministic diagnostic test pattern and
+a headless screenshot harness. Phase 2: the first real document pipeline —
+`open` fetches a URL (or reads file://), parses the HTML into a DOM, and
+dumps it; session history (back/forward) and crash-safe session files
+work. The window does not render web content yet (that is Phase 3).
 
 USAGE:
     veyra-shell <COMMAND> [OPTIONS]
@@ -276,6 +345,8 @@ USAGE:
 COMMANDS:
     window        Open a native window rendering the diagnostic scene.
     screenshot    Render headlessly and write a PNG + canonical hash.
+    open          Load URL(s) through the navigation pipeline and print
+                  document dumps.
 
 OPTIONS (both commands):
     --config PATH       Load a TOML configuration file (schema documented
@@ -289,6 +360,13 @@ OPTIONS (window only):
 OPTIONS (screenshot only):
     --output PATH       Output PNG path (required; written atomically).
     --expect-hash HEX   Fail unless the canonical pixel hash matches.
+
+OPTIONS (open only):
+    --dump-dom          Print the html5lib-format DOM dump of every
+                        visited document (stdout).
+    --timeout-ms N      Response deadline override in milliseconds.
+    --session-file PATH Write the final session history (JSON, written
+                        atomically: temp + fsync + rename).
 
 INFO:
     -h, --help          This text.

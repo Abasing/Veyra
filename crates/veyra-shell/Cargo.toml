@@ -1,6 +1,6 @@
 [package]
 name = "veyra-shell"
-description = "Veyra's application shell: native window, event loop, input plumbing, screenshot harness (Phase 1)"
+description = "Veyra's application shell: window, navigation pipeline, document loading, screenshot harness (Phases 1-2)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -13,9 +13,12 @@ default-run = "veyra-shell"
 # shell is a dependency-graph *root* — nothing may depend on it. It owns the
 # window/event loop (winit, an ADR-0007-sanctioned native boundary), CPU
 # buffer presentation (softbuffer, evaluated in ADR-0012), the screenshot
-# harness, the configuration schema, and the injectable frame clock.
+# harness, the configuration schema, the injectable frame clock, and (from
+# Phase 2) the navigation/session browser layer (the graph's "navigation/
+# session (module in shell→browser)" node): SHELL -> NAV -> NET/HTML/DOM/URL.
 #
-# Roadmap phase: 1. ADR-0005, ADR-0007, ADR-0012.
+# Roadmap phases: 1-2. ADR-0005, ADR-0007, ADR-0012, ADR-0008 (networking
+# consumed through veyra-net's policy surface only).
 
 [dependencies]
 veyra-gfx = { path = "../veyra-gfx", version = "0.1.0" }
@@ -26,7 +29,12 @@ sha2 = { workspace = true }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 toml = { workspace = true }
+veyra-url = { path = "../veyra-url", version = "0.1.0" }
+veyra-dom = { path = "../veyra-dom", version = "0.1.0" }
+veyra-html = { path = "../veyra-html", version = "0.1.0" }
+veyra-net = { path = "../veyra-net", version = "0.1.0" }
 
 [dev-dependencies]
 criterion = { workspace = true }

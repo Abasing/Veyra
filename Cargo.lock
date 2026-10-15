@@ -2868,12 +2868,17 @@ dependencies = [
  "criterion",
  "png",
  "serde",
+ "serde_json",
  "sha2",
  "softbuffer",
  "toml",
  "tracing",
  "tracing-subscriber",
+ "veyra-dom",
  "veyra-gfx",
+ "veyra-html",
+ "veyra-net",
+ "veyra-url",
  "winit",
 ]
 
