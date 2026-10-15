@@ -1,0 +1,42 @@
+name: Engineering task
+description: A scoped unit of engineering work tied to the roadmap.
+labels: ["task"]
+body:
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Roadmap phase
+      options:
+        - "Phase 0 — foundation"
+        - "Phase 1 — shell & test infrastructure"
+        - "Phase 2 — net/url/html/dom"
+        - "Phase 3 — CSS/layout/paint"
+        - "Phase 4 — JS execution"
+        - "Phase 5 — web-platform coverage"
+        - "Phase 6 — isolation & storage"
+        - "Phase 7 — modern rendering"
+        - "Phase 8 — workers/WASM/networking"
+        - "Phase 9 — media/platform/DevTools"
+        - "Phase 10 — product completeness"
+        - "Phase 11 — audits & releases"
+    validations:
+      required: true
+  - type: textarea
+    id: objective
+    attributes:
+      label: Objective
+      description: What will exist when this task is done?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Testable conditions with evidence (per docs/roadmap/implementation-plan.md conventions).
+    validations:
+      required: true
+  - type: textarea
+    id: research
+    attributes:
+      label: Research dependencies
+      description: Relevant docs/research/ entries, ADRs, or open questions.
