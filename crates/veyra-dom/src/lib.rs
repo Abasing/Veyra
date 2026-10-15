@@ -2,7 +2,7 @@
 //! documents, mutation algorithms, and the events skeleton.
 //!
 //! This is the system's stable core (dependency-graph §1 invariant 2): it
-//! depends on nothing in the engine except [`veyra-url`], because origins
+//! depends on nothing in the engine except [`veyra-url`](veyra_url), because origins
 //! live on nodes. Storage is a slot arena with generational ids — the
 //! shape the future GC integration (Phase 5) and the WebIDL binding work
 //! build on — with the normative node-count limit from the engineering

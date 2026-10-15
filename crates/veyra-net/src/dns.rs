@@ -31,9 +31,10 @@ impl HickoryDns {
     /// read or parsed (e.g. no resolv.conf in a container).
     pub fn from_system_config() -> Result<Self, DnsSetupError> {
         let builder = TokioResolver::builder_tokio()?;
-        Ok(Self {
-            resolver: builder.build(),
-        })
+        // hickory 0.26: `build` reports resolver-construction failures
+        // (e.g. malformed system configuration) as `NetError`.
+        let resolver = builder.build().map_err(DnsSetupError::from)?;
+        Ok(Self { resolver })
     }
 }
 
@@ -51,8 +52,8 @@ impl std::fmt::Display for DnsSetupError {
 
 impl std::error::Error for DnsSetupError {}
 
-impl From<hickory_resolver::ResolveError> for DnsSetupError {
-    fn from(error: hickory_resolver::ResolveError) -> Self {
+impl From<hickory_resolver::net::NetError> for DnsSetupError {
+    fn from(error: hickory_resolver::net::NetError) -> Self {
         Self {
             message: error.to_string(),
         }

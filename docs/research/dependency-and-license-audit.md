@@ -92,6 +92,8 @@ every row below is a *candidate to be evaluated at its phase gate*.
 | `h2` | MIT | 0.4.20 | 884.0M | 2026-10-06 | HTTP/2. |
 | `rustls` | Apache-2.0 OR ISC OR MIT | 0.23.46 | 1.00B | 2026-10-14 | TLS — memory-safe stack. |
 | `rustls-platform-verifier` | MIT OR Apache-2.0 | 0.7.1 | 177.3M | 2026-09-24 | OS trust-store verification (platform boundary per ADR-0007). |
+| `webpki-roots` | CDLA-Permissive-2.0 | 1.0.9 | 821.6M | 2026-07-18 | Bundled Mozilla CA trust roots — Phase 2 (ADR-0013 deviation from platform-verifier, revisit Phase 6). |
+| `ring` | Apache-2.0 AND ISC | 0.17.14 | 806.9M | 2025-03-11 | rustls crypto provider (transitive, ADR-0008 stack); publishes `Apache-2.0 AND ISC` — no OpenSSL clause in the crates.io expression. |
 | `quinn` | MIT OR Apache-2.0 | 0.11.12 | 354.3M | 2026-09-14 | QUIC — Phase 7–8. |
 | `h3` | MIT | 0.0.8 | 4.9M | 2025-05-06 | **0.0.x, update >1y — maturity risk**; H3 deferred (ADR-0008). |
 | `tokio` | MIT | 1.53.3 | 1.07B | 2026-10-13 | Async runtime. |

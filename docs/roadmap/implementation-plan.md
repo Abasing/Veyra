@@ -154,6 +154,28 @@ network-dependent tests (mitigate: local fixture server).
 **Exit conditions.** Acceptance criteria 1–5. **Dependencies.** Phase 1; ADR-0003 spike
 (parsing arm).
 
+> **Status (2026-10-15): implemented.** Evidence: `veyra-url` (url 2.5.8,
+> ADR-0013) passes the vendored WPT `urltestdata.json` at 827/896 with 69
+> documented deltas in five categories; `veyra-html` (html5ever 0.40.1,
+> ADR-0003 decision point resolved to adopt) passes the vendored html5lib
+> tree-construction subset at 320/324 (98.8%) with 4 documented deltas
+> (deferred `<selectedcontent>` cloning); the deterministic fuzz smoke
+> (20,000 mutated inputs, fixed seed) runs with zero crashes/hangs and the
+> limits tests prove typed rejections (64 MiB / 8 MiB / depth 512 / node
+> count); `veyra-net` (hyper/rustls/hickory per ADR-0008, webpki-roots per
+> ADR-0013) passes 27 tests over a local HTTP/1.1 fixture, including the
+> limit and policy paths; the shell's `open` command loads http(s)/file
+> documents, dumps DOMs in the html5lib format, and traverses session
+> history through the browser-owned state machine (property-tested,
+> 32 seeded sequences); the crash-safe session file (temp+fsync+rename) is
+> fault-injection tested; a real-HTTPS load (`https://example.org/`, status
+> 200, DOM dump) is the recorded acceptance smoke — first run 2026-10-15,
+> re-run clean on 2026-10-16 (this note is the evidence home for that
+> smoke); cookies
+> (RFC 6265 subset) and origins are stamped on every loaded document.
+> Corpus provenance, licenses, and revisions are documented next to the
+> vendored files; matrix rows updated with pass counts.
+
 ---
 
 ## Phase 3 — CSS parsing, cascade, basic layout, text rendering, painting, input handling

@@ -5,8 +5,10 @@ status: Updated (Phase 1) | last-updated: 2026-10-15 | companion-to: system-over
 This document defines the **allowed dependency directions** between Veyra
 crates and the invariants that keep them honest. It is the contract CI and
 review enforce as crates appear; the graph below is the target state at
-Phase 8. Current tree (Phase 1): `veyra-doctor` (tooling), `veyra-gfx`
-(CPU raster), `veyra-shell` (application root).
+Phase 8. Current tree (Phase 2): `veyra-doctor` (tooling), `veyra-gfx`
+(CPU raster), `veyra-shell` (application root; owns the navigation/session
+browser layer), `veyra-url` (parsing authority), `veyra-dom` (arena tree),
+`veyra-html` (HTML parsing), `veyra-net` (network service).
 
 ## 1. Engine-crate dependency rules
 
@@ -135,8 +137,10 @@ in the content layer until the Phase 5 binding-generator decision.
 Crates join this graph only at their roadmap phase, with the ADR that
 justifies the boundary cited in the crate's `Cargo.toml` header comment.
 The current tree contains `veyra-doctor`, `veyra-gfx` (Phase 1, brought
-forward per roadmap — ADR-0005/0012), and `veyra-shell` (Phase 1,
-ADR-0007/0012); every other row in §1's diagram is a target state, and
+forward per roadmap — ADR-0005/0012), `veyra-shell` (Phase 1,
+ADR-0007/0012; Phase 2 adds the browser layer), `veyra-url`,
+`veyra-dom`, `veyra-html`, and `veyra-net` (Phase 2 — ADR-0008/0013);
+every other row in §1's diagram is a target state, and
 the review checklist rejects PRs that add crates without both the
 roadmap phase and an ADR reference. When a boundary
 turns out wrong in practice (cohesion signals: types imported solely to

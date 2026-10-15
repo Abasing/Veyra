@@ -23,6 +23,12 @@ allow = [
   "Zlib",
   "0BSD",
   "CC0-1.0",
+  # ADR-0013 (Phase 2 document pipeline): webpki-roots bundles Mozilla's CA
+  # store (CDLA-Permissive-2.0) as Veyra's Phase 2 TLS trust roots.
+  # (ring 0.17.14, the rustls provider, publishes "Apache-2.0 AND ISC" —
+  # the historical OpenSSL advertising clause is gone from its expression,
+  # so no OpenSSL allowance is needed.)
+  "CDLA-Permissive-2.0",
 ]
 confidence-threshold = 0.93
 

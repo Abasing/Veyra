@@ -1,4 +1,4 @@
-//! `veyra-html` — Veyra's HTML parser: bytes in, [`veyra-dom`] trees out.
+//! `veyra-html` — Veyra's HTML parser: bytes in, [`veyra-dom`](veyra_dom) trees out.
 //!
 //! Wraps the html5ever tree builder (the audit-adopted Phase 2 dependency,
 //! ADR-0003/ADR-0013) behind the Veyra node model. The external crate is

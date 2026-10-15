@@ -21,8 +21,8 @@ authors.workspace = true
 # (document size / attribute-text size / nesting depth limits).
 
 [dependencies]
-veyra-url = { path = "../veyra-url" }
-veyra-dom = { path = "../veyra-dom" }
+veyra-url = { path = "../veyra-url", version = "0.1.0" }
+veyra-dom = { path = "../veyra-dom", version = "0.1.0" }
 html5ever = "0.40.1"
 
 [dev-dependencies]

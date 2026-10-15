@@ -247,7 +247,7 @@ impl Config {
     ///
     /// # Errors
     /// [`ConfigError::FileRead`] when the file cannot be read; parse and
-    /// validation errors as [`Config::from_str`].
+    /// validation errors as [`Config::parse_document`].
     pub fn load(path: &Path) -> Result<Self, ConfigError> {
         let text = std::fs::read_to_string(path).map_err(|source| ConfigError::FileRead {
             path: path.to_path_buf(),

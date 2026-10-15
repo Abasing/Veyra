@@ -19,7 +19,7 @@ authors.workspace = true
 # §6 (node-count limit ownership).
 
 [dependencies]
-veyra-url = { path = "../veyra-url" }
+veyra-url = { path = "../veyra-url", version = "0.1.0" }
 
 [dev-dependencies]
 

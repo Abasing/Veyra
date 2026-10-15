@@ -1,10 +1,10 @@
 # Compatibility Matrix
 
-status: Phase 1 recorded (2026-10-15) | last-updated: 2026-10-15
+status: Phase 2 recorded (2026-10-15) | last-updated: 2026-10-15
 
 The single source of truth for what Veyra supports. Seeded 2026-10-15 at
-project foundation; Phase 1 (the shell and deterministic test
-infrastructure) is recorded below with its evidence. **No web-platform
+project foundation; Phases 1-2 (the shell and test infrastructure, then
+the first document pipeline) are recorded below with their evidence. **No web-platform
 capability is implemented yet** — the rows below that are marked complete
 are *infrastructure* (a window, a test rig), not browser features. States
 are defined in the [compatibility program](compatibility-program.md);
@@ -40,9 +40,9 @@ acceptance criteria" rows, cited with the suite revision.
 | Deterministic rendering infrastructure (CPU raster, screenshot harness, golden images) | Meets defined acceptance criteria | Phase 1 (2026-10-15): `veyra-gfx` integer-only CPU raster (ADR-0005); `veyra-shell screenshot` CLI emits PNG + canonical SHA-256 (hash of the `VEYRA-CANON1` buffer form: `9e473fb9615949d9b57516dc0413bc2a2f7954f9004063db403757c0f08696d9` at 800x600, scene v1); golden fixtures reviewed and pixel-compared in CI | Linux (CI) evidence only; hash definition documented in `veyra-shell::hashing` | Phase 3 replaces the fixture scene with the display-list pipeline (rendering-pipeline.md) |
 | Injectable frame clock | Meets defined acceptance criteria | Phase 1 (2026-10-15): `FrameClock` trait with `SystemFrameClock` (production) and `FixedFrameClock` (tests); deterministic progression, zero-step rejection, and overflow tests; no wall-clock sleeps in the suite | none | Phase 4 adopts it in `veyra-executor` (rAF, timers) |
 | Configuration & diagnostics | Meets defined acceptance criteria | Phase 1 (2026-10-15): strict TOML schema (`deny_unknown_fields`, reserved `[policy]`, `schema_version` gate), tracing on stderr with documented `RUST_LOG` precedence; valid/invalid/defaults tests | none | Phase 6+ extends the reserved policy section |
-| URL parsing (WHATWG URL) | Investigated | [ST3]; `url` crate adoption planned Phase 2 (ADR-0008) | none yet (no code) | Phase 2 suite runs |
-| HTML parsing & tree construction | Investigated | [ST1]; html5lib-tests corpus selected | none yet | Phase 2 |
-| DOM core (trees, events, mutation) | Investigated | [ST2]; architecture in system-overview | none yet | Phase 2, 5 |
+| URL parsing (WHATWG URL) | Tested with known failures | Phase 2 (2026-10-15): `url` 2.5.8 behind `veyra-url` (ADR-0013); vendored WPT `urltestdata.json` (fetched 2026-10-15, W3C BSD-3): 827/896 assertion entries pass (92.3%), 69 documented deltas in five categories (`crates/veyra-url/tests/data/deltas.md`: extra-slash authority, IDNA lenient punycode, file-host/path edges, blob-origin derivation, U+0020/backslash encoding); origins (tuple w/ effective port, opaque with minted identity), relative resolution, input-length limits | the 69 documented corpus deltas | Delta retirement per category (upstream-tracked); setter APIs at the script phase |
+| HTML parsing & tree construction | Tested with known failures | Phase 2 (2026-10-15): `html5ever` 0.40.1 behind `veyra-html` (ADR-0003 decision point resolved: adopt — ADR-0013); vendored html5lib tree-construction subset (8 files, 324 cases, MIT, upstream commit `9329e64694e7`): **320/324 pass (98.8%)**, 4 documented deltas (deferred `<selectedcontent>` option cloning — `crates/veyra-html/tests/data/deltas.md`); error-list assertions not part of the claim (tree shape is the conformance surface); limits tested (document 64 MiB, attr/text 8 MiB, depth 512 counting the whole tree, node count via veyra-dom) with typed rejections; deterministic fuzz smoke 20,000 inputs, zero crashes | `<selectedcontent>` cloning (4 cases, needs subtree cloning in veyra-dom) | Retire the delta; fragment-parsing conformance breadth; full charset stack ([ST6]) |
+| DOM core (trees, events, mutation) | Partially implemented | Phase 2 (2026-10-15): `veyra-dom` arena with generational ids (stale-id detection), origin-tagged documents (parse-derived origins only), node kinds incl. template contents, mutation algorithms (append/insert/remove/detach, cycle+depth rejection), iterative traversal, events skeleton (capture/target/bubble, cancelation); 32 seeded property-test sequences audit structural invariants; no WebIDL surface, live NodeLists, or GC yet | none within the claimed subset | Phase 5 (bindings, GC integration, live collections) |
 | CSS syntax & selectors | Investigated | [ST13]; cssparser/selectors per ADR-0003 | none yet | Phase 3 |
 | Cascade & computed values | Investigated | [ST12] | none yet | Phase 3 |
 | Block/inline layout | Investigated | custom (dossier gap analysis) | none yet | Phase 3 |
@@ -55,11 +55,11 @@ acceptance criteria" rows, cited with the suite revision.
 | JavaScript (ECMAScript) | Investigated | ADR-0002 (Boa); Test262 runner Phase 4 | none yet | Phase 4 |
 | Event loop & timers | Designed | execution-and-web-apis.md | none yet | Phase 4 |
 | Web IDL bindings | Designed | execution-and-web-apis.md §4 | none yet | Phase 4–5 |
-| Fetch & CORS | Investigated | [ST4]; ADR-0008 policy layer | none yet | Phase 5 |
-| HTTP/1.1, TLS, DNS transport | Investigated | hyper/rustls/hickory (ADR-0008) | none yet | Phase 2 |
-| HTTP/2 | Investigated | h2 (ADR-0008) | none yet | Phase 2 |
+| Fetch & CORS | In development | Phase 2 (2026-10-15): navigation-GET subset of the fetch policy in `veyra-net` — scheme allow-list, bad-port list, redirect loop (limit 20, 301/302/303→GET), cookie application, response/header limits with typed rejections; CORS/fetch-metadata/CSP checks arrive with their consumers ([ST4] subset recorded) | CORS unimplemented (no cross-origin reads exist yet) | Phase 5 (full fetch algorithm), 3 (subresources) |
+| HTTP/1.1, TLS, DNS transport | Partially implemented | Phase 2 (2026-10-15): hyper 1.8 HTTP/1.1 + rustls 0.23 (ring) + hickory-resolver 0.26.3 (system config) behind `veyra-net` (ADR-0008/0013); webpki-roots bundle (deviation from platform-verifier recorded in ADR-0013, revisit Phase 6); verified against a hand-rolled local HTTP/1.1 fixture (10 integration tests) and a real-HTTPS load (`https://example.org/` → status 200 → DOM dump, re-run 2026-10-16; evidence home: the Phase 2 status note in implementation-plan.md); H2 not claimed | none within the claimed subset | H2 enablement; connection pooling surfaces; platform trust roots (Phase 6) |
+| HTTP/2 | Investigated | h2 (ADR-0008); not enabled in Phase 2 — the document load path needs HTTP/1.1; one feature flip in `veyra-net` when demanded (ADR-0013) | none yet | Enable + fixture tests on demand |
 | HTTP/3 (QUIC) | Not investigated | h3 maturity risk [E1] | — | Phase 7–8 gate |
-| Cookies (RFC 6265, SameSite, CHIPS) | Investigated | [N10][N5] | none yet | Phase 2 (jar), 5 (policy) |
+| Cookies (RFC 6265, SameSite, CHIPS) | Partially implemented | Phase 2 (2026-10-15): RFC 6265 jar subset in `veyra-net` — Domain/Path/Expires (IMF-fixdate)/Max-Age/Secure/HttpOnly/SameSite (None requires Secure, modern default Lax), host-only vs domain cookies, RFC ordering, 6265bis eviction, injected-clock expiry tests; exercised over the fixture server (redirect + terminal Set-Cookie paths); SameSite site-comparison is exact-host until the public-suffix list lands (recorded subset); CHIPS not started | exact-host same-site (no PSL yet); non-IMF date formats become session cookies | PSL adoption; Phase 3 subresource SameSite enforcement; Phase 5 policy integration |
 | Caching (HTTP semantics) | Investigated | [N2] research; Veyra cache Phase 5 | none yet | Phase 5 |
 | CSP / mixed content / secure contexts | Investigated | [ST32][ST33][ST35] | none yet | Phase 5–6 |
 | Permissions & Permissions Policy | Investigated | [ST34] | none yet | Phase 6 (backend), 10 (UI) |
