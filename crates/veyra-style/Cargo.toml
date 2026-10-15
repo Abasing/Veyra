@@ -1,0 +1,42 @@
+[package]
+name = "veyra-style"
+description = "Veyra's CSS engine entry: stylesheet parsing on cssparser/selectors (ADR-0003/0014, dependency-graph §1)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+# Boundary justification (docs/architecture/dependency-graph.md §1/§6): CSS
+# parsing is an untrusted-input leaf — bytes in, typed parse results out, no
+# privileged imports (the fuzz-target rule). The Servo parsing crates are
+# consumed here and never leak: the public surface is Veyra-owned types
+# (`Stylesheet`, `CssRule`, `StyleRule`, `SelectorList`, `ParseError`), so a
+# future parser replacement remains a one-crate change (the same shape as
+# veyra-url/html).
+#
+# Proc-macro note (dependency-graph §2 build-time policy): the policy defers
+# content-layer proc-macro *dependencies* to the Phase 5 binding-generator
+# decision; cssparser/selectors pull their parser-internal macros
+# (cssparser-macros, to_shmem_derive, derive_more) transitively — the same
+# transitive reality the url/icu and html5ever stacks already present — and
+# ADR-0003's adoption decision sanctions exactly this pair. No Veyra
+# content-layer crate declares a proc-macro dependency directly.
+#
+# Roadmap phase: 3. ADR-0003 (cssparser/selectors-first CSS), ADR-0014
+# (Phase 3 entry spike: stylo deferred with measured surface; hand-built
+# cascade proceeds), docs/architecture/dependency-graph.md §2 (CSS/layout
+# row).
+
+[dependencies]
+cssparser = "0.38.0"
+selectors = { version = "0.41.0", default-features = false }
+# selectors' SelectorImpl associated types must implement PrecomputedHash
+# (the crate's bloom-filter/map fast-path hashing contract).
+precomputed-hash = "0.1.1"
+
+[dev-dependencies]
+serde_json = "1.0.145"
+
+[lints]
+workspace = true

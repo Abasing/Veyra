@@ -24,6 +24,10 @@ allow = [
   "Zlib",
   "0BSD",
   "CC0-1.0",
+  # ADR-0003/0014 (Phase 3): cssparser/selectors are MPL-2.0 (file-level
+  # copyleft); adoption accepted with file-level license isolation and
+  # NOTICE discipline. Stylo itself remains deferred (ADR-0014).
+  "MPL-2.0",
   # ADR-0013 (Phase 2 document pipeline): webpki-roots bundles Mozilla's CA
   # store (CDLA-Permissive-2.0) as Veyra's Phase 2 TLS trust roots.
   # (ring 0.17.14, the rustls provider, publishes "Apache-2.0 AND ISC" —
