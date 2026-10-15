@@ -1,6 +1,8 @@
 # ADR 0003: Rendering architecture — display-list pipeline, cssparser/selectors-first CSS, taffy for flex/grid
 
-- **Status:** Accepted
+- **Status:** Accepted (decision 2's stylo-spike clause resolved by
+  [ADR-0014](0014-phase3-entry-spike-stylo.md): hand-built cascade on
+  cssparser/selectors proceeds; stylo deferred with measured baseline)
 - **Date:** 2026-10-15
 - **Deciders:** Veyra foundation
 

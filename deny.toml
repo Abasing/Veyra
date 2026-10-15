@@ -1,9 +1,10 @@
 # cargo-deny configuration for Veyra.
 #
 # Policy: Apache-2.0 project. Dependencies must be permissive licenses usable
-# in a browser engine without copyleft obligations beyond file-level (MPL-2.0
-# is deliberately NOT in the allow list yet — the stylo/cssparser/selectors
-# family is MPL-2.0 and requires ADR-0003/ADR-0010 evaluation before adoption).
+# in a browser engine without copyleft obligations beyond file-level.
+# MPL-2.0 (cssparser/selectors, Phase 3 per ADR-0003/0014 — file-level
+# license isolation and NOTICE discipline) enters the allow list together
+# with those crates at adoption.
 # Language rules (no C/C++ subsystems) are enforced in review; this file is the
 # license/supply-chain gate. See docs/research/dependency-and-license-audit.md.
 

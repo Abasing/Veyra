@@ -59,9 +59,9 @@ every row below is a *candidate to be evaluated at its phase gate*.
 
 | Crate | License `[E]` | Version | Downloads | Last update | Assessment |
 |---|---|---|---|---|---|
-| `cssparser` | MPL-2.0 | 0.38.0 | 101.7M | 2026-09-07 | MPL — gate on ADR-0003. Tokenizer/parser core. |
-| `selectors` | MPL-2.0 | 0.41.0 | 86.2M | 2026-09-30 | MPL — gate on ADR-0003. Selector matching. |
-| `stylo` | MPL-2.0 | 0.22.0 | 405.4K | 2026-09-30 | Extracted Gecko style engine; **highest-leverage / highest-risk** option; ADR-0003 spike required. |
+| `cssparser` | MPL-2.0 | 0.38.0 | 102.0M | 2026-09-07 | **Adopted Phase 3** (ADR-0003/0014; MPL-2.0 allow-listed). Tokenizer/parser core behind `veyra-style`. |
+| `selectors` | MPL-2.0 | 0.41.0 | 86.5M | 2026-09-30 | **Adopted Phase 3** (ADR-0003/0014; MPL-2.0 allow-listed). Selector matching behind `veyra-style`. |
+| `stylo` | MPL-2.0 | 0.22.0 | 405.4K | 2026-09-30 | Extracted Gecko style engine; **deferred** — ADR-0014 spike measured the integration surface (~318 methods / 12 surfaces / 137-package probe lock); revisit Phase 7+. |
 | `taffy` | MIT | 0.15.0 | 16.3M | 2026-10-12 | Flexbox + Grid; **Phase 3 candidate**. Block/inline layout not covered — custom work. |
 | `parley` / `fontique` | Apache-2.0 OR MIT | 0.12.0 | 4.1M | 2026-10-09 | Linebender text stack (shaping orchestration, fallback, font enumeration) — Phase 3. |
 | `rustybuzz` | MIT | 0.20.1 | 34.7M | 2024-11-12 | HarfBuzz-shaped shaping in Rust — Phase 3. (Update cadence slow = stable.) |

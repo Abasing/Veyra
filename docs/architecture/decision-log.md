@@ -19,6 +19,7 @@ Proposed | Accepted | Superseded(by NNNN) | Rejected.
 | [0011](../decisions/0011-sandbox-technology.md) | Sandboxing technology: Linux-first, Windows/macOS as recorded gaps | Accepted | 2026-10-15 |
 | [0012](../decisions/0012-phase1-shell-dependencies.md) | Phase 1 shell and test-infrastructure dependencies (winit, softbuffer, png, sha2, tracing, serde/toml, criterion) | Accepted | 2026-10-15 |
 | [0013](../decisions/0013-phase2-document-pipeline-dependencies.md) | Phase 2 document-pipeline dependencies (url, hyper/rustls/hickory, html5ever, webpki-roots) | Accepted | 2026-10-15 |
+| [0014](../decisions/0014-phase3-entry-spike-stylo.md) | Phase 3 entry spike: stylo evaluation — hand-built cascade on cssparser/selectors proceeds | Accepted | 2026-10-16 |
 
 ## Index
 
