@@ -1,0 +1,24 @@
+[package]
+name = "veyra-doctor"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description = "Repository invariant checks for Veyra: documentation structure, claim safety, ADR/roadmap integrity, CI action pinning."
+publish = false
+
+[dependencies]
+# Intentionally empty: this tool must stay zero-dependency so that the
+# repository's validation substrate has no supply-chain surface of its own.
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "veyra-doctor"
+path = "src/main.rs"
+
+[lib]
+name = "veyra_doctor"
+path = "src/lib.rs"
