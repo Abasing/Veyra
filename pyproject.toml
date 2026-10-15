@@ -1,0 +1,18 @@
+# Python tooling configuration for Veyra (repository tooling only; Python is
+# used for test orchestration and analysis per the project language policy).
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = [
+  # Documentation URLs and register tables exceed 100 chars on occasion; the
+  # formatting gate for Python source stays strict for E5xx otherwise.
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tools"]
+addopts = "-q"

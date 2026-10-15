@@ -1,0 +1,10 @@
+# Pinned Rust toolchain for Veyra.
+#
+# Pinned (not floating "stable") so that local and CI builds are reproducible.
+# Bumping this version is a deliberate change: it lands as its own commit and
+# must keep `cargo fmt --check`, `clippy -D warnings`, and the full test suite
+# green before merge.
+[toolchain]
+channel = "1.99.0"
+profile = "minimal"
+components = ["rustfmt", "clippy"]

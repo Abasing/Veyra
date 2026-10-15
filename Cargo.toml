@@ -1,0 +1,34 @@
+# Veyra workspace configuration.
+#
+# The workspace currently contains only repository tooling. Engine crates are
+# added exclusively through ADR-justified subsystem boundaries — see
+# docs/architecture/dependency-graph.md. No placeholder crates exist by design.
+[workspace]
+resolver = "3"
+members = ["tools/veyra-doctor"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+repository = "https://github.com/Abasing/Veyra"
+authors = ["Veyra contributors"]
+
+[workspace.lints.rust]
+# Browser-engine baseline: no unsafe code anywhere in the workspace. Engine
+# crates inherit this automatically; future sandbox/GFX exceptions (if ever)
+# require an ADR and crate-local opt-out with review.
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+# Untrusted-input discipline starts on day one: panicking on malformed input is
+# a denial-of-service bug in a browser. See docs/engineering/engineering-standards.md.
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
