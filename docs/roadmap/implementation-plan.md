@@ -44,7 +44,7 @@ validation tooling, and honest CI.
 **Tests.** `veyra-doctor` unit tests; Python tool tests; the CI set runs
 green on `develop`.
 
-**AC.**
+**Acceptance criteria.**
 1. All CI jobs green on the pushed `develop` head (link to run recorded
    in the completion report).
 2. `veyra-doctor` passes locally and in CI: required docs present, no
@@ -61,7 +61,7 @@ green on `develop`.
 scheduled validation); research gaps (tracked in coverage matrix with
 priorities).
 
-**Exit conditions.** AC 1–5 hold. **Dependencies.** None.
+**Exit conditions.** Acceptance criteria 1–5 hold. **Dependencies.** None.
 
 ---
 
@@ -85,7 +85,7 @@ trait with CPU raster backend; benchmark scaffolding (criterion) with the
 **Tests.** Golden-image round-trip; config parsing; screenshot harness
 unit tests; input event plumbing smoke tests.
 
-**AC.**
+**Acceptance criteria.**
 1. `veyra-shell` opens a window and renders a deterministic pattern;
    CI (headless xvfb) produces identical hashes across runs.
 2. Screenshot harness emits buffer+hash via CLI for automation.
@@ -97,7 +97,7 @@ unit tests; input event plumbing smoke tests.
 variance across CI runners (mitigate: software rendering, fixed viewport,
 bundled fonts).
 
-**Exit conditions.** AC 1–4. **Dependencies.** Phase 0.
+**Exit conditions.** Acceptance criteria 1–4. **Dependencies.** Phase 0.
 
 ---
 
@@ -127,7 +127,7 @@ navigation state machine property tests; HTML parser fuzz target
 (cargo-fuzz) with CI smoke budget; limits tests (oversized
 documents/attributes rejected, not crashed).
 
-**AC.**
+**Acceptance criteria.**
 1. html5lib-tests tree-construction results recorded in the
    compatibility matrix with pass counts (evidence, not claims).
 2. WPT url subset passes via `url` crate adoption (documented deltas).
@@ -140,7 +140,7 @@ documents/attributes rejected, not crashed).
 **Risks.** html5ever integration depth; cookie edge semantics; CI
 network-dependent tests (mitigate: local fixture server).
 
-**Exit conditions.** AC 1–5. **Dependencies.** Phase 1; ADR-0003 spike
+**Exit conditions.** Acceptance criteria 1–5. **Dependencies.** Phase 1; ADR-0003 spike
 (parsing arm).
 
 ---
@@ -173,7 +173,7 @@ fixtures (bundled fonts).
 **Performance.** Layout/paint baselines on the fixture corpus; budgets
 set from measured numbers (recorded in-phase benchmark note).
 
-**AC.**
+**Acceptance criteria.**
 1. WPT selectors-4 subset pass-rate recorded in matrix; no regressions
    across two consecutive scheduled runs.
 2. Golden images stable across CI runs; paint-order unit tests pass.
@@ -187,7 +187,7 @@ set from measured numbers (recorded in-phase benchmark note).
 subset; taffy intrinsic-sizing interop; MPL-2.0 license hygiene for
 cssparser/selectors (deny.toml updated at adoption, ADR referenced).
 
-**Exit conditions.** AC 1–5. **Dependencies.** Phase 2; ADR-0003 spike.
+**Exit conditions.** Acceptance criteria 1–5. **Dependencies.** Phase 2; ADR-0003 spike.
 
 ---
 
@@ -214,7 +214,7 @@ results (Veyra-measured — engine self-reports never load-bearing);
 event-dispatch tests vs DOM spec; binding round-trip tests; GC-interop
 stress tests (wrappers ↔ arena).
 
-**AC.**
+**Acceptance criteria.**
 1. Test262 results (chosen subset: language essentials + harness-
    compatible features) recorded in the compatibility matrix with pass
    rates and the exact suite revision used.
@@ -229,7 +229,7 @@ stress tests (wrappers ↔ arena).
 **Risks.** Boa rooting/trace API fit (spike gate); bindings volume;
 engine bug triage upstream (mitigate: upstream issue workflow).
 
-**Exit conditions.** AC 1–5. **Dependencies.** Phase 3; ADR-0002 spike.
+**Exit conditions.** Acceptance criteria 1–5. **Dependencies.** Phase 3; ADR-0002 spike.
 
 ---
 
@@ -256,7 +256,7 @@ matrix; regression triage process live (reproduce → minimize → fix →
 regression test, per compatibility program); content-sniffing [ST5]
 tests.
 
-**AC.**
+**Acceptance criteria.**
 1. WPT pass rates for fetch/forms/history recorded with suite revision;
    each phase's exit adds ≥ the previous phase's documented target for
    the *tracked* directories (targets set from Phase 4 baselines).
@@ -270,7 +270,7 @@ tests.
 **Risks.** WPT harness integration effort [U]; conformance volume vs
 review capacity (mitigate: tracked-subset discipline).
 
-**Exit conditions.** AC 1–4. **Dependencies.** Phase 4.
+**Exit conditions.** Acceptance criteria 1–4. **Dependencies.** Phase 4.
 
 ---
 
@@ -304,7 +304,7 @@ IPC fuzzer; crash-recovery fault injection; storage crash-safety tests
 recorded (multi-process overhead measured against Phase 5 numbers —
 documented delta, not hidden).
 
-**AC.**
+**Acceptance criteria.**
 1. Sandbox negative test suite passes: content process cannot open
    files, create sockets, or invoke non-allow-listed syscalls.
 2. Renderer kill mid-navigation recovers to a usable tab with session
@@ -317,7 +317,7 @@ documented delta, not hidden).
 **Risks.** seccomp budget too tight/loose (iterate with experiments);
 Windows/macOS gap remains (documented in ADR-0011 — not hidden).
 
-**Exit conditions.** AC 1–5. **Dependencies.** Phase 5; ADR-0004/0011.
+**Exit conditions.** Acceptance criteria 1–5. **Dependencies.** Phase 5; ADR-0004/0011.
 
 ---
 
@@ -350,7 +350,7 @@ shaping/bidi fixtures (CJK/RTL corpora); scroll-perf benchmarks
 **Performance.** Frame-time budgets on animated fixtures derived from
 measured baselines; scroll latency vs Phase 3 CPU path recorded.
 
-**AC.**
+**Acceptance criteria.**
 1. WPT grid/flex/writing-modes tracked pass rates recorded and
    non-regressing.
 2. GPU path renders the golden corpus identically to CPU path within
@@ -365,7 +365,7 @@ measured baselines; scroll latency vs Phase 3 CPU path recorded.
 CI gate — ADR-0005); scope (largest phase — staged sub-milestones
 documented in-phase).
 
-**Exit conditions.** AC 1–5 (sub-milestone sequencing documented at
+**Exit conditions.** Acceptance criteria 1–5 (sub-milestone sequencing documented at
 phase start). **Dependencies.** Phase 5/6; ADR-0005.
 
 ---
@@ -393,7 +393,7 @@ Streams [ST8], WebSocket [ST44], WASM core+JS API [J5][J6].
 structured-clone fuzz targets; SW lifecycle tests; WebSocket WPT
 subset; worker event-loop ordering suites.
 
-**AC.**
+**Acceptance criteria.**
 1. WASM spec-suite pass rate recorded in the matrix (suite revision
    cited); JS API integration tests pass.
 2. A documented offline demo (SW + Cache API) passes the fixture test
@@ -405,7 +405,7 @@ subset; worker event-loop ordering suites.
 sub-milestones); wasmi throughput (interpreter — documented, JIT path
 is ADR-0009's Phase 9+ gate).
 
-**Exit conditions.** AC 1–4. **Dependencies.** Phases 5–7.
+**Exit conditions.** Acceptance criteria 1–4. **Dependencies.** Phases 5–7.
 
 ---
 
@@ -434,7 +434,7 @@ documented].
 updates per namespace; CDP conformance fixtures; A11y baseline via
 accesskit tree dumps.
 
-**AC.**
+**Acceptance criteria.**
 1. Each capability ends in one of exactly two states: implemented with
    tracked tests, or a documented gap in the compatibility matrix with
    the ADR/decision citation. **No silent partial states.**
@@ -448,7 +448,7 @@ accesskit tree dumps.
 **Risks.** Everything in this phase is maturity-risked [U per audit
 §8]; the gate protects the roadmap from overcommitment.
 
-**Exit conditions.** AC 1–4. **Dependencies.** Phases 7–8; ADR-0006/0007.
+**Exit conditions.** Acceptance criteria 1–4. **Dependencies.** Phases 7–8; ADR-0006/0007.
 
 ---
 
@@ -475,7 +475,7 @@ infrastructure decision documented); safe-browsing strategy decision
 conformance vs ARIA mappings [ST17 — bot-blocked canonical];
 startup/memory budgets from measured baselines; update rollback tests.
 
-**AC.**
+**Acceptance criteria.**
 1. Documented user journeys (open→browse→bookmark→restore) pass UI
    automation end-to-end.
 2. A11y: platform tree exposed and navigable with screen-reader smoke
@@ -488,7 +488,7 @@ startup/memory budgets from measured baselines; update rollback tests.
 **Risks.** Scope (product surface is wide — sub-milestones);
 self-hosted chrome stability (ADR-0006 fallback pre-registered).
 
-**Exit conditions.** AC 1–5. **Dependencies.** Phases 7–9.
+**Exit conditions.** Acceptance criteria 1–5. **Dependencies.** Phases 7–9.
 
 ---
 
@@ -508,7 +508,7 @@ compatibility-matrix-driven public reporting.
 
 **Tests.** All of the above; audit findings triaged with SLAs.
 
-**AC.**
+**Acceptance criteria.**
 1. Public compatibility reports generated from the matrix (no
    hand-claimed numbers).
 2. External audit completed or formally scheduled with scope document.
@@ -519,7 +519,7 @@ compatibility-matrix-driven public reporting.
 **Risks.** Audit scheduling (external dependency); sustaining
 volunteer/contributor throughput (process documented in CONTRIBUTING).
 
-**Exit conditions.** AC 1–4; the program is steady-state thereafter.
+**Exit conditions.** Acceptance criteria 1–4; the program is steady-state thereafter.
 **Dependencies.** Phase 10.
 
 ---

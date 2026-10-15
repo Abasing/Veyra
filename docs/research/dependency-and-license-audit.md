@@ -151,3 +151,12 @@ every row below is a *candidate to be evaluated at its phase gate*.
 4. **[U] AV1/video** — monitor pure-Rust decoder projects; escalate to
    ADR-0007 exception discussion only if a browser-viable path appears.
 5. **[U] `winit` 0.31 beta** — pin stable release at Phase 1.
+
+## Confidence and gaps
+
+- High: the table data itself (retrieved live from crates.io/GitHub APIs
+  on 2026-10-15; reproducible via the archived pull).
+- Medium: maturity interpretations (download counts and activity are
+  indicators, not guarantees); license-field conflicts noted inline.
+- Low/pending: adoption decisions — every row is a candidate until its
+  phase gate; nothing here authorizes a dependency by itself.

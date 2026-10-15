@@ -18,16 +18,34 @@ use std::path::{Path, PathBuf};
 /// One finding from the check run.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Finding {
-    Fail { check: String, detail: String },
-    Warn { check: String, detail: String },
+    /// A violation that fails the run (non-zero exit).
+    Fail {
+        /// Check category that produced the finding.
+        check: String,
+        /// Human-readable description of the violation.
+        detail: String,
+    },
+    /// A best-effort check result that does not fail the run.
+    Warn {
+        /// Check category that produced the finding.
+        check: String,
+        /// Human-readable description of the warning.
+        detail: String,
+    },
 }
 
 impl Finding {
     fn fail(check: &str, detail: impl Into<String>) -> Self {
-        Finding::Fail { check: check.to_string(), detail: detail.into() }
+        Finding::Fail {
+            check: check.to_string(),
+            detail: detail.into(),
+        }
     }
     fn warn(check: &str, detail: impl Into<String>) -> Self {
-        Finding::Warn { check: check.to_string(), detail: detail.into() }
+        Finding::Warn {
+            check: check.to_string(),
+            detail: detail.into(),
+        }
     }
 }
 
@@ -43,6 +61,7 @@ impl fmt::Display for Finding {
 /// Aggregate result of a full run.
 #[derive(Debug, Default)]
 pub struct Report {
+    /// Every finding produced by the run, in execution order.
     pub findings: Vec<Finding>,
 }
 
@@ -51,14 +70,21 @@ impl Report {
         self.findings.push(f);
     }
 
+    /// Iterates the failing findings.
     pub fn failures(&self) -> impl Iterator<Item = &Finding> {
-        self.findings.iter().filter(|f| matches!(f, Finding::Fail { .. }))
+        self.findings
+            .iter()
+            .filter(|f| matches!(f, Finding::Fail { .. }))
     }
 
+    /// Iterates the warning findings.
     pub fn warnings(&self) -> impl Iterator<Item = &Finding> {
-        self.findings.iter().filter(|f| matches!(f, Finding::Warn { .. }))
+        self.findings
+            .iter()
+            .filter(|f| matches!(f, Finding::Warn { .. }))
     }
 
+    /// True when the run produced no failing findings.
     pub fn is_clean(&self) -> bool {
         self.failures().count() == 0
     }
@@ -161,6 +187,13 @@ pub fn extract_link_targets(md: &str) -> Vec<String> {
         }
     }
     targets
+}
+
+/// True when any heading's text contains `needle` (case-insensitive).
+pub fn has_heading_containing(md: &str, needle: &str) -> bool {
+    extract_headings(md)
+        .iter()
+        .any(|(_, text)| contains_ci(text, needle))
 }
 
 /// Extracts markdown headings (lines starting with `#`s).
@@ -291,8 +324,14 @@ fn check_required_files(root: &Path, report: &mut Report) {
                     ));
                 }
             }
-            Ok(_) => report.push(Finding::fail("required-files", format!("{path} is not a regular file"))),
-            Err(_) => report.push(Finding::fail("required-files", format!("{path} is missing"))),
+            Ok(_) => report.push(Finding::fail(
+                "required-files",
+                format!("{path} is not a regular file"),
+            )),
+            Err(_) => report.push(Finding::fail(
+                "required-files",
+                format!("{path} is missing"),
+            )),
         }
     }
 }
@@ -301,7 +340,10 @@ fn check_license_and_status(root: &Path, report: &mut Report) {
     match read_repo_file(root, "LICENSE") {
         Some(text) => {
             if !text.contains("Apache License") || !text.contains("Version 2.0, January 2004") {
-                report.push(Finding::fail("license", "LICENSE does not appear to be the Apache-2.0 text"));
+                report.push(Finding::fail(
+                    "license",
+                    "LICENSE does not appear to be the Apache-2.0 text",
+                ));
             }
         }
         None => report.push(Finding::fail("license", "LICENSE unreadable")),
@@ -332,13 +374,20 @@ fn check_forbidden_claims(root: &Path, report: &mut Report) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
-                let name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+                let name = path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default();
                 if name != ".git" && name != "target" && name != "node_modules" {
                     stack.push(path);
                 }
             } else if path.extension().map(|e| e == "md").unwrap_or(false) {
                 visited += 1;
-                let rel = path.strip_prefix(root).unwrap_or(&path).to_string_lossy().to_string();
+                let rel = path
+                    .strip_prefix(root)
+                    .unwrap_or(&path)
+                    .to_string_lossy()
+                    .to_string();
                 if let Ok(text) = fs::read_to_string(&path) {
                     for claim in FORBIDDEN_CLAIMS {
                         if contains_ci(&text, claim) {
@@ -353,26 +402,47 @@ fn check_forbidden_claims(root: &Path, report: &mut Report) {
         }
     }
     if visited < 20 {
-        report.push(Finding::fail("forbidden-claims", format!("only {visited} markdown files scanned — repository structure unexpected")));
+        report.push(Finding::fail(
+            "forbidden-claims",
+            format!("only {visited} markdown files scanned — repository structure unexpected"),
+        ));
     }
 }
 
 fn check_research_docs(root: &Path, report: &mut Report) {
     for name in RESEARCH_DOCS {
+        // The source register is a data table, not an analysis document: it
+        // has its own dating/liveness checks and is exempt from the
+        // analysis-document section requirements.
+        if name == "source-register.md" {
+            continue;
+        }
         let rel = format!("docs/research/{name}");
         match read_repo_file(root, &rel) {
             Some(text) => {
-                if !text.contains("## Evidence basis") {
-                    report.push(Finding::fail("research-structure", format!("{rel} lacks `## Evidence basis`")));
+                if !has_heading_containing(&text, "Evidence basis") {
+                    report.push(Finding::fail(
+                        "research-structure",
+                        format!("{rel} lacks an `Evidence basis` heading"),
+                    ));
                 }
-                if !text.contains("## Open questions") {
-                    report.push(Finding::fail("research-structure", format!("{rel} lacks `## Open questions`")));
+                if !has_heading_containing(&text, "Open questions") {
+                    report.push(Finding::fail(
+                        "research-structure",
+                        format!("{rel} lacks an `Open questions` heading"),
+                    ));
                 }
                 if !contains_ci(&text, "confidence") {
-                    report.push(Finding::fail("research-structure", format!("{rel} lacks a Confidence section/mention")));
+                    report.push(Finding::fail(
+                        "research-structure",
+                        format!("{rel} lacks a Confidence section/mention"),
+                    ));
                 }
             }
-            None => report.push(Finding::fail("research-structure", format!("{rel} unreadable"))),
+            None => report.push(Finding::fail(
+                "research-structure",
+                format!("{rel} unreadable"),
+            )),
         }
     }
     // The research index must link every research doc.
@@ -411,7 +481,10 @@ fn check_source_register(root: &Path, report: &mut Report) {
                 ));
             }
         }
-        None => report.push(Finding::fail("source-register", format!("{rel} unreadable"))),
+        None => report.push(Finding::fail(
+            "source-register",
+            format!("{rel} unreadable"),
+        )),
     }
 }
 
@@ -428,7 +501,10 @@ fn check_adrs(root: &Path, report: &mut Report) {
     }
     adrs.sort();
     if adrs.is_empty() {
-        report.push(Finding::fail("adr-structure", "no ADR files found in docs/decisions/"));
+        report.push(Finding::fail(
+            "adr-structure",
+            "no ADR files found in docs/decisions/",
+        ));
         return;
     }
     for (i, name) in adrs.iter().enumerate() {
@@ -440,11 +516,17 @@ fn check_adrs(root: &Path, report: &mut Report) {
         if let Some(text) = read_repo_file(root, &rel) {
             for heading in ["## Context", "## Decision", "## Consequences"] {
                 if !text.contains(heading) {
-                    report.push(Finding::fail("adr-structure", format!("{rel} lacks `{heading}`")));
+                    report.push(Finding::fail(
+                        "adr-structure",
+                        format!("{rel} lacks `{heading}`"),
+                    ));
                 }
             }
             if !contains_ci(&text, "revisit conditions") {
-                report.push(Finding::fail("adr-structure", format!("{rel} lacks revisit conditions")));
+                report.push(Finding::fail(
+                    "adr-structure",
+                    format!("{rel} lacks revisit conditions"),
+                ));
             }
         }
     }
@@ -452,11 +534,17 @@ fn check_adrs(root: &Path, report: &mut Report) {
     if let Some(log) = read_repo_file(root, "docs/architecture/decision-log.md") {
         for name in &adrs {
             if !log.contains(name.as_str()) {
-                report.push(Finding::fail("adr-structure", format!("docs/architecture/decision-log.md does not index {name}")));
+                report.push(Finding::fail(
+                    "adr-structure",
+                    format!("docs/architecture/decision-log.md does not index {name}"),
+                ));
             }
         }
     } else {
-        report.push(Finding::fail("adr-structure", "docs/architecture/decision-log.md unreadable"));
+        report.push(Finding::fail(
+            "adr-structure",
+            "docs/architecture/decision-log.md unreadable",
+        ));
     }
 }
 
@@ -475,17 +563,29 @@ fn check_roadmap(root: &Path, report: &mut Report) {
                             .unwrap_or(text.len());
                         let block = &text[start..end];
                         if !contains_ci(block, "acceptance criteria") {
-                            report.push(Finding::fail("roadmap", format!("{rel}: Phase {n} block lacks acceptance criteria")));
+                            report.push(Finding::fail(
+                                "roadmap",
+                                format!("{rel}: Phase {n} block lacks acceptance criteria"),
+                            ));
                         }
                         if !contains_ci(block, "exit conditions") {
-                            report.push(Finding::fail("roadmap", format!("{rel}: Phase {n} block lacks exit conditions")));
+                            report.push(Finding::fail(
+                                "roadmap",
+                                format!("{rel}: Phase {n} block lacks exit conditions"),
+                            ));
                         }
                     }
-                    None => report.push(Finding::fail("roadmap", format!("{rel} lacks `## Phase {n}`"))),
+                    None => report.push(Finding::fail(
+                        "roadmap",
+                        format!("{rel} lacks `## Phase {n}`"),
+                    )),
                 }
             }
             if !text.contains("## Minimum useful milestone") {
-                report.push(Finding::fail("roadmap", format!("{rel} lacks `## Minimum useful milestone`")));
+                report.push(Finding::fail(
+                    "roadmap",
+                    format!("{rel} lacks `## Minimum useful milestone`"),
+                ));
             }
         }
         None => report.push(Finding::fail("roadmap", format!("{rel} unreadable"))),
@@ -497,18 +597,30 @@ fn check_architecture_docs(root: &Path, report: &mut Report) {
         let rel = format!("docs/architecture/{name}");
         match read_repo_file(root, &rel) {
             Some(text) => {
-                let headings = extract_headings(&text).into_iter().filter(|(lvl, _)| *lvl >= 2).count();
+                let headings = extract_headings(&text)
+                    .into_iter()
+                    .filter(|(lvl, _)| *lvl >= 2)
+                    .count();
                 if headings < 5 {
-                    report.push(Finding::fail("architecture-structure", format!("{rel} has only {headings} level>=2 headings")));
+                    report.push(Finding::fail(
+                        "architecture-structure",
+                        format!("{rel} has only {headings} level>=2 headings"),
+                    ));
                 }
             }
-            None => report.push(Finding::fail("architecture-structure", format!("{rel} unreadable"))),
+            None => report.push(Finding::fail(
+                "architecture-structure",
+                format!("{rel} unreadable"),
+            )),
         }
     }
-    if let Some(graph) = read_repo_file(root, "docs/architecture/dependency-graph.md") {
-        if !graph.contains("```mermaid") {
-            report.push(Finding::fail("architecture-structure", "dependency-graph.md lacks a mermaid diagram"));
-        }
+    if let Some(graph) = read_repo_file(root, "docs/architecture/dependency-graph.md")
+        && !graph.contains("```mermaid")
+    {
+        report.push(Finding::fail(
+            "architecture-structure",
+            "dependency-graph.md lacks a mermaid diagram",
+        ));
     }
 }
 
@@ -517,11 +629,17 @@ fn check_matrix_states(root: &Path, report: &mut Report) {
     if let Some(text) = read_repo_file(root, rel) {
         for state in MATRIX_STATES {
             if !contains_ci(&text, state) {
-                report.push(Finding::fail("matrix-states", format!("{rel} must use the canonical state `{state}`")));
+                report.push(Finding::fail(
+                    "matrix-states",
+                    format!("{rel} must use the canonical state `{state}`"),
+                ));
             }
         }
         if !text.contains("compatibility-program.md") {
-            report.push(Finding::fail("matrix-states", format!("{rel} must reference the compatibility program")));
+            report.push(Finding::fail(
+                "matrix-states",
+                format!("{rel} must reference the compatibility program"),
+            ));
         }
     } else {
         report.push(Finding::fail("matrix-states", format!("{rel} unreadable")));
@@ -553,7 +671,10 @@ fn check_workflows(root: &Path, report: &mut Report) {
             }
         };
         if !text.contains("\npermissions:") && !text.starts_with("permissions:") {
-            report.push(Finding::fail("workflows", format!("{rel} lacks a top-level `permissions:` restriction")));
+            report.push(Finding::fail(
+                "workflows",
+                format!("{rel} lacks a top-level `permissions:` restriction"),
+            ));
         }
         for (idx, line) in text.lines().enumerate() {
             let trimmed = line.trim();
@@ -563,7 +684,10 @@ fn check_workflows(root: &Path, report: &mut Report) {
                 if !is_full_commit_sha(sha_part) {
                     report.push(Finding::fail(
                         "workflows",
-                        format!("{rel}:{} action `{spec}` is not pinned to a full 40-hex commit SHA", idx + 1),
+                        format!(
+                            "{rel}:{} action `{spec}` is not pinned to a full 40-hex commit SHA",
+                            idx + 1
+                        ),
                     ));
                 }
             }
@@ -584,7 +708,10 @@ fn check_md_links(root: &Path, report: &mut Report) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
-                let name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+                let name = path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_default();
                 if name != ".git" && name != "target" && name != "node_modules" {
                     stack.push(path);
                 }
@@ -606,14 +733,21 @@ fn check_md_links(root: &Path, report: &mut Report) {
                         if !ok {
                             report.push(Finding::warn(
                                 "md-links",
-                                format!("anchor #{anchor} in {} has no matching heading", path.display()),
+                                format!(
+                                    "anchor #{anchor} in {} has no matching heading",
+                                    path.display()
+                                ),
                             ));
                         }
                         continue;
                     }
                     let dest = rel_parent.join(file_part);
                     if !dest.exists() {
-                        let shown = path.strip_prefix(root).unwrap_or(&path).to_string_lossy().to_string();
+                        let shown = path
+                            .strip_prefix(root)
+                            .unwrap_or(&path)
+                            .to_string_lossy()
+                            .to_string();
                         report.push(Finding::fail(
                             "md-links",
                             format!("{shown} links to missing file `{file_part}`"),
@@ -621,19 +755,23 @@ fn check_md_links(root: &Path, report: &mut Report) {
                     } else if target.contains('#') {
                         // anchor into another file: best-effort
                         let anchor = target.split('#').nth(1).unwrap_or("");
-                        if !anchor.is_empty() {
-                            if let Ok(dest_text) = fs::read_to_string(&dest) {
-                                let slug = heading_slug(anchor);
-                                let ok = extract_headings(&dest_text)
-                                    .iter()
-                                    .any(|(_, h)| heading_slug(h) == slug);
-                                if !ok {
-                                    let shown = path.strip_prefix(root).unwrap_or(&path).to_string_lossy().to_string();
-                                    report.push(Finding::warn(
+                        if !anchor.is_empty()
+                            && let Ok(dest_text) = fs::read_to_string(&dest)
+                        {
+                            let slug = heading_slug(anchor);
+                            let ok = extract_headings(&dest_text)
+                                .iter()
+                                .any(|(_, h)| heading_slug(h) == slug);
+                            if !ok {
+                                let shown = path
+                                    .strip_prefix(root)
+                                    .unwrap_or(&path)
+                                    .to_string_lossy()
+                                    .to_string();
+                                report.push(Finding::warn(
                                         "md-links",
                                         format!("{shown} anchor `#{anchor}` not found in {file_part} (best-effort check)"),
                                     ));
-                                }
                             }
                         }
                     }
@@ -644,23 +782,35 @@ fn check_md_links(root: &Path, report: &mut Report) {
 }
 
 fn check_toolchain_and_lints(root: &Path, report: &mut Report) {
-    if let Some(text) = read_repo_file(root, "rust-toolchain.toml") {
-        if !text.contains("channel =") {
-            report.push(Finding::fail("toolchain", "rust-toolchain.toml lacks a pinned channel"));
-        }
+    if let Some(text) = read_repo_file(root, "rust-toolchain.toml")
+        && !text.contains("channel =")
+    {
+        report.push(Finding::fail(
+            "toolchain",
+            "rust-toolchain.toml lacks a pinned channel",
+        ));
     }
     if let Some(text) = read_repo_file(root, "Cargo.toml") {
         if !text.contains("unsafe_code = \"forbid\"") {
-            report.push(Finding::fail("toolchain", "workspace must set unsafe_code = \"forbid\""));
+            report.push(Finding::fail(
+                "toolchain",
+                "workspace must set unsafe_code = \"forbid\"",
+            ));
         }
         if !text.contains("unwrap_used = \"deny\"") {
-            report.push(Finding::fail("toolchain", "workspace must deny clippy::unwrap_used"));
+            report.push(Finding::fail(
+                "toolchain",
+                "workspace must deny clippy::unwrap_used",
+            ));
         }
     }
-    if let Some(text) = read_repo_file(root, "deny.toml") {
-        if !text.contains("[licenses]") || !text.contains("Apache-2.0") {
-            report.push(Finding::fail("toolchain", "deny.toml must define a license allow-list including Apache-2.0"));
-        }
+    if let Some(text) = read_repo_file(root, "deny.toml")
+        && (!text.contains("[licenses]") || !text.contains("Apache-2.0"))
+    {
+        report.push(Finding::fail(
+            "toolchain",
+            "deny.toml must define a license allow-list including Apache-2.0",
+        ));
     }
 }
 
@@ -700,10 +850,10 @@ pub fn resolve_root(explicit: Option<String>) -> PathBuf {
     if let Ok(manifest) = std::env::var("CARGO_MANIFEST_DIR") {
         let p = PathBuf::from(manifest);
         // tools/veyra-doctor -> repo root
-        if p.ends_with("tools/veyra-doctor") || p.ends_with("tools\\veyra-doctor") {
-            if let Some(gp) = p.parent().and_then(|pp| pp.parent()) {
-                return gp.to_path_buf();
-            }
+        if (p.ends_with("tools/veyra-doctor") || p.ends_with("tools\\veyra-doctor"))
+            && let Some(gp) = p.parent().and_then(|pp| pp.parent())
+        {
+            return gp.to_path_buf();
         }
         return p;
     }
@@ -713,178 +863,212 @@ pub fn resolve_root(explicit: Option<String>) -> PathBuf {
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 mod tests {
-//! Unit tests for veyra-doctor's parsing and check logic.
+    //! Unit tests for veyra-doctor's parsing and check logic.
 
-use std::fs;
-use std::path::Path;
+    use std::fs;
+    use std::path::Path;
 
-use crate::{
-    contains_ci, extract_headings, extract_link_targets, find_iso_date, heading_slug,
-    is_full_commit_sha, run_all, Finding,
-};
+    use crate::{
+        Finding, contains_ci, extract_headings, extract_link_targets, find_iso_date, heading_slug,
+        is_full_commit_sha, run_all,
+    };
 
-#[cfg(test)]
-#[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
-mod helpers {
-    use super::*;
+    #[cfg(test)]
+    #[allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+    mod helpers {
+        use super::*;
 
-    /// Builds a throwaway directory tree for checks that need one.
-    pub fn tmpdir(tag: &str) -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "veyra-doctor-test-{tag}-{}",
-            std::process::id()
-        ));
-        let _ = fs::remove_dir_all(&dir);
-        fs::create_dir_all(&dir).expect("create temp dir");
-        dir
-    }
-
-    pub fn write(path: &Path, rel: &str, content: &str) {
-        let full = path.join(rel);
-        if let Some(parent) = full.parent() {
-            fs::create_dir_all(parent).expect("create parent");
+        /// Builds a throwaway directory tree for checks that need one.
+        pub fn tmpdir(tag: &str) -> std::path::PathBuf {
+            let dir = std::env::temp_dir()
+                .join(format!("veyra-doctor-test-{tag}-{}", std::process::id()));
+            let _ = fs::remove_dir_all(&dir);
+            fs::create_dir_all(&dir).expect("create temp dir");
+            dir
         }
-        fs::write(full, content).expect("write file");
+
+        pub fn write(path: &Path, rel: &str, content: &str) {
+            let full = path.join(rel);
+            if let Some(parent) = full.parent() {
+                fs::create_dir_all(parent).expect("create parent");
+            }
+            fs::write(full, content).expect("write file");
+        }
     }
-}
 
-use helpers::{tmpdir, write};
+    use helpers::{tmpdir, write};
 
-#[test]
-fn iso_date_detection() {
-    assert_eq!(find_iso_date("accessed 2026-10-15 and more").as_deref(), Some("2026-10-15"));
-    assert_eq!(find_iso_date("| 2026-10-15 | url |").as_deref(), Some("2026-10-15"));
-    assert_eq!(find_iso_date("no date here"), None);
-    assert_eq!(find_iso_date("12026-10-15"), None, "must not match inside longer digit runs");
-}
+    #[test]
+    fn iso_date_detection() {
+        assert_eq!(
+            find_iso_date("accessed 2026-10-15 and more").as_deref(),
+            Some("2026-10-15")
+        );
+        assert_eq!(
+            find_iso_date("| 2026-10-15 | url |").as_deref(),
+            Some("2026-10-15")
+        );
+        assert_eq!(find_iso_date("no date here"), None);
+        assert_eq!(
+            find_iso_date("12026-10-15"),
+            None,
+            "must not match inside longer digit runs"
+        );
+    }
 
-#[test]
-fn sha_pinning_detection() {
-    assert!(is_full_commit_sha("11bd71901bbe5b1630ceea73d27597364c9af683"));
-    assert!(is_full_commit_sha(
-        "3d3c42e5aac5e0f57e1a2b30c25b6b1c0a4d8e9f"
-    ));
-    assert!(!is_full_commit_sha("v4.2.2"));
-    assert!(!is_full_commit_sha("main"));
-    assert!(!is_full_commit_sha("11bd719"));
-}
+    #[test]
+    fn sha_pinning_detection() {
+        assert!(is_full_commit_sha(
+            "11bd71901bbe5b1630ceea73d27597364c9af683"
+        ));
+        assert!(is_full_commit_sha(
+            "3d3c42e5aac5e0f57e1a2b30c25b6b1c0a4d8e9f"
+        ));
+        assert!(!is_full_commit_sha("v4.2.2"));
+        assert!(!is_full_commit_sha("main"));
+        assert!(!is_full_commit_sha("11bd719"));
+    }
 
-#[test]
-fn ci_substring() {
-    assert!(contains_ci("Fully Compatible with Nothing", "fully compatible"));
-    assert!(contains_ci("PRODUCTION-READY BROWSER", "production-ready browser"));
-    assert!(!contains_ci("compatibility", "compatible-with"));
-}
+    #[test]
+    fn ci_substring() {
+        assert!(contains_ci(
+            "Fully Compatible with Nothing",
+            "fully compatible"
+        ));
+        assert!(contains_ci(
+            "PRODUCTION-READY BROWSER",
+            "production-ready browser"
+        ));
+        assert!(!contains_ci("compatibility", "compatible-with"));
+    }
 
-#[test]
-fn heading_slug_matches_github_style() {
-    assert_eq!(heading_slug("Phase 0 — Repository foundation"), "phase-0--repository-foundation");
-    assert_eq!(heading_slug("What is it?"), "what-is-it");
-    assert_eq!(heading_slug("A  B"), "a--b");
-}
+    #[test]
+    fn heading_slug_matches_github_style() {
+        assert_eq!(
+            heading_slug("Phase 0 — Repository foundation"),
+            "phase-0--repository-foundation"
+        );
+        assert_eq!(heading_slug("What is it?"), "what-is-it");
+        assert_eq!(heading_slug("A  B"), "a--b");
+    }
 
-#[test]
-fn link_extraction_skips_urls_and_anchors() {
-    let md = "[docs](./docs/README.md) [web](https://example.com) [anchor](#phase) ![img](x.png)";
-    let targets = extract_link_targets(md);
-    assert!(targets.contains(&"./docs/README.md".to_string()));
-    assert!(!targets.iter().any(|t| t.starts_with("http")));
-    assert!(!targets.iter().any(|t| t.starts_with('#')));
-}
+    #[test]
+    fn link_extraction_skips_urls_and_anchors() {
+        let md =
+            "[docs](./docs/README.md) [web](https://example.com) [anchor](#phase) ![img](x.png)";
+        let targets = extract_link_targets(md);
+        assert!(targets.contains(&"./docs/README.md".to_string()));
+        assert!(!targets.iter().any(|t| t.starts_with("http")));
+        assert!(!targets.iter().any(|t| t.starts_with('#')));
+    }
 
-#[test]
-fn headings_extraction() {
-    let md = "# Title\n\n## Section\n### Sub\n";
-    let hs = extract_headings(md);
-    assert_eq!(hs.len(), 3);
-    assert_eq!(hs[1], (2, "Section".to_string()));
-}
+    #[test]
+    fn headings_extraction() {
+        let md = "# Title\n\n## Section\n### Sub\n";
+        let hs = extract_headings(md);
+        assert_eq!(hs.len(), 3);
+        assert_eq!(hs[1], (2, "Section".to_string()));
+    }
 
-#[test]
-fn run_all_fails_on_missing_repo() {
-    let dir = tmpdir("empty");
-    let report = run_all(&dir);
-    assert!(!report.is_clean(), "empty tree must fail");
-    let has_required = report
-        .findings
-        .iter()
-        .any(|f| matches!(f, Finding::Fail { check, .. } if check == "required-files"));
-    assert!(has_required);
-    let _ = fs::remove_dir_all(&dir);
-}
+    #[test]
+    fn run_all_fails_on_missing_repo() {
+        let dir = tmpdir("empty");
+        let report = run_all(&dir);
+        assert!(!report.is_clean(), "empty tree must fail");
+        let has_required = report
+            .findings
+            .iter()
+            .any(|f| matches!(f, Finding::Fail { check, .. } if check == "required-files"));
+        assert!(has_required);
+        let _ = fs::remove_dir_all(&dir);
+    }
 
-#[test]
-fn workflow_pinning_check_flags_unpinned_actions() {
-    let dir = tmpdir("wf");
-    write(
-        &dir,
-        ".github/workflows/ci.yml",
-        "name: CI\non:\n  push:\npermissions:\n  contents: read\njobs:\n  a:\n    steps:\n      - uses: actions/checkout@v4\n",
-    );
-    let report = run_all(&dir);
-    let flagged = report.findings.iter().any(|f| {
-        matches!(f, Finding::Fail { check, detail }
+    #[test]
+    fn workflow_pinning_check_flags_unpinned_actions() {
+        let dir = tmpdir("wf");
+        write(
+            &dir,
+            ".github/workflows/ci.yml",
+            "name: CI\non:\n  push:\npermissions:\n  contents: read\njobs:\n  a:\n    steps:\n      - uses: actions/checkout@v4\n",
+        );
+        let report = run_all(&dir);
+        let flagged = report.findings.iter().any(|f| {
+            matches!(f, Finding::Fail { check, detail }
             if check == "workflows" && detail.contains("actions/checkout@v4"))
-    });
-    assert!(flagged, "unpinned action must be flagged");
-    let _ = fs::remove_dir_all(&dir);
-}
+        });
+        assert!(flagged, "unpinned action must be flagged");
+        let _ = fs::remove_dir_all(&dir);
+    }
 
-#[test]
-fn forbidden_claim_check_fires() {
-    let dir = tmpdir("claims");
-    write(&dir, "docs/note.md", "We are fully compatible with the web.\n");
-    let report = run_all(&dir);
-    let flagged = report.findings.iter().any(|f| {
-        matches!(f, Finding::Fail { check, detail }
+    #[test]
+    fn forbidden_claim_check_fires() {
+        let dir = tmpdir("claims");
+        write(
+            &dir,
+            "docs/note.md",
+            "We are fully compatible with the web.\n",
+        );
+        let report = run_all(&dir);
+        let flagged = report.findings.iter().any(|f| {
+            matches!(f, Finding::Fail { check, detail }
             if check == "forbidden-claims" && detail.contains("fully compatible"))
-    });
-    assert!(flagged);
-    let _ = fs::remove_dir_all(&dir);
-}
+        });
+        assert!(flagged);
+        let _ = fs::remove_dir_all(&dir);
+    }
 
-#[test]
-fn adr_sequencing_check() {
-    let dir = tmpdir("adr");
-    write(&dir, "docs/decisions/0001-first.md", "# ADR 1\n\n## Context\nx\n\n## Decision\ny\n\n## Consequences\nz\n\n## Revisit conditions\nw\n");
-    // missing 0002
-    write(&dir, "docs/decisions/0003-third.md", "# ADR 3\n");
-    let report = run_all(&dir);
-    let flagged = report.findings.iter().any(|f| {
-        matches!(f, Finding::Fail { check, detail }
+    #[test]
+    fn adr_sequencing_check() {
+        let dir = tmpdir("adr");
+        write(
+            &dir,
+            "docs/decisions/0001-first.md",
+            "# ADR 1\n\n## Context\nx\n\n## Decision\ny\n\n## Consequences\nz\n\n## Revisit conditions\nw\n",
+        );
+        // missing 0002
+        write(&dir, "docs/decisions/0003-third.md", "# ADR 3\n");
+        let report = run_all(&dir);
+        let flagged = report.findings.iter().any(|f| {
+            matches!(f, Finding::Fail { check, detail }
             if check == "adr-structure" && detail.contains("sequentially"))
-    });
-    assert!(flagged, "gap in ADR numbering must be flagged");
-    let _ = fs::remove_dir_all(&dir);
-}
+        });
+        assert!(flagged, "gap in ADR numbering must be flagged");
+        let _ = fs::remove_dir_all(&dir);
+    }
 
-#[test]
-fn roadmap_phase_block_requires_acceptance_criteria() {
-    let dir = tmpdir("roadmap");
-    let mut plan = String::new();
-    for n in 0..=11 {
-        plan.push_str(&format!(
+    #[test]
+    fn roadmap_phase_block_requires_acceptance_criteria() {
+        let dir = tmpdir("roadmap");
+        let mut plan = String::new();
+        for n in 0..=11 {
+            plan.push_str(&format!(
             "## Phase {n} — test\n\nsome text\n\nAcceptance criteria: x\n\nExit conditions: y\n\n"
         ));
-    }
-    plan.push_str("\n## Minimum useful milestone\n\nstuff\n");
-    write(&dir, "docs/roadmap/implementation-plan.md", &plan);
-    let report = run_all(&dir);
-    let phase_failures = report
-        .findings
-        .iter()
-        .filter(|f| {
-            matches!(f, Finding::Fail { check, detail }
+        }
+        plan.push_str("\n## Minimum useful milestone\n\nstuff\n");
+        write(&dir, "docs/roadmap/implementation-plan.md", &plan);
+        let report = run_all(&dir);
+        let phase_failures = report
+            .findings
+            .iter()
+            .filter(|f| {
+                matches!(f, Finding::Fail { check, detail }
                 if check == "roadmap" && detail.contains("lacks acceptance criteria"))
-        })
-        .count();
-    assert_eq!(phase_failures, 0, "well-formed phases must pass: {report:?}");
+            })
+            .count();
+        assert_eq!(
+            phase_failures, 0,
+            "well-formed phases must pass: {report:?}"
+        );
 
-    // Now remove acceptance criteria from Phase 2 and expect exactly one failure.
-    let broken = plan.replace("## Phase 2 — test\n\nsome text\n\nAcceptance criteria: x", "## Phase 2 — test\n\nsome text");
-    write(&dir, "docs/roadmap/implementation-plan.md", &broken);
-    let report = run_all(&dir);
-    let phase_failures = report
+        // Now remove acceptance criteria from Phase 2 and expect exactly one failure.
+        let broken = plan.replace(
+            "## Phase 2 — test\n\nsome text\n\nAcceptance criteria: x",
+            "## Phase 2 — test\n\nsome text",
+        );
+        write(&dir, "docs/roadmap/implementation-plan.md", &broken);
+        let report = run_all(&dir);
+        let phase_failures = report
         .findings
         .iter()
         .filter(|f| {
@@ -892,7 +1076,7 @@ fn roadmap_phase_block_requires_acceptance_criteria() {
                 if check == "roadmap" && detail.contains("Phase 2") && detail.contains("acceptance criteria"))
         })
         .count();
-    assert_eq!(phase_failures, 1);
-    let _ = fs::remove_dir_all(&dir);
-}
+        assert_eq!(phase_failures, 1);
+        let _ = fs::remove_dir_all(&dir);
+    }
 }

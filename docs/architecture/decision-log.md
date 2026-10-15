@@ -6,26 +6,45 @@ Proposed | Accepted | Superseded(by NNNN) | Rejected.
 
 | ADR | Title | Status | Date |
 |---|---|---|---|
-| [0001](0001-rust-first-language-policy.md) | Rust-first language and dependency policy | Accepted | 2026-10-15 |
-| [0002](0002-javascript-engine-strategy.md) | JavaScript engine strategy: embed Boa behind a facade | Accepted | 2026-10-15 |
-| [0003](0003-rendering-architecture.md) | Rendering architecture: display-list pipeline, cssparser/selectors-first CSS, taffy for flex/grid | Accepted | 2026-10-15 |
-| [0004](0004-process-model.md) | Process model: single-process start with capability seams, out-of-process content at Phase 6 | Accepted | 2026-10-15 |
-| [0005](0005-graphics-abstraction.md) | Graphics abstraction: CPU-first raster, wgpu for GPU path | Accepted | 2026-10-15 |
-| [0006](0006-frontend-and-extension-strategy.md) | Frontend integration and staged extension strategy | Accepted | 2026-10-15 |
-| [0007](0007-native-dependency-policy.md) | Native (non-Rust) dependency policy | Accepted | 2026-10-15 |
-| [0008](0008-networking-stack.md) | Networking stack: policy layer over hyper/rustls/hickory | Accepted | 2026-10-15 |
-| [0009](0009-webassembly-runtime.md) | WebAssembly runtime: wasmi first, wasmtime when JIT is justified | Accepted | 2026-10-15 |
-| [0010](0010-storage-engine.md) | Storage engine: redb-based origin/partition stores | Accepted | 2026-10-15 |
-| [0011](0011-sandbox-technology.md) | Sandboxing technology: Linux-first, Windows/macOS as recorded gaps | Accepted | 2026-10-15 |
+| [0001](../decisions/0001-rust-first-language-policy.md) | Rust-first language and dependency policy | Accepted | 2026-10-15 |
+| [0002](../decisions/0002-javascript-engine-strategy.md) | JavaScript engine strategy: embed Boa behind a facade | Accepted | 2026-10-15 |
+| [0003](../decisions/0003-rendering-architecture.md) | Rendering architecture: display-list pipeline, cssparser/selectors-first CSS, taffy for flex/grid | Accepted | 2026-10-15 |
+| [0004](../decisions/0004-process-model.md) | Process model: single-process start with capability seams, out-of-process content at Phase 6 | Accepted | 2026-10-15 |
+| [0005](../decisions/0005-graphics-abstraction.md) | Graphics abstraction: CPU-first raster, wgpu for GPU path | Accepted | 2026-10-15 |
+| [0006](../decisions/0006-frontend-and-extension-strategy.md) | Frontend integration and staged extension strategy | Accepted | 2026-10-15 |
+| [0007](../decisions/0007-native-dependency-policy.md) | Native (non-Rust) dependency policy | Accepted | 2026-10-15 |
+| [0008](../decisions/0008-networking-stack.md) | Networking stack: policy layer over hyper/rustls/hickory | Accepted | 2026-10-15 |
+| [0009](../decisions/0009-webassembly-runtime.md) | WebAssembly runtime: wasmi first, wasmtime when JIT is justified | Accepted | 2026-10-15 |
+| [0010](../decisions/0010-storage-engine.md) | Storage engine: redb-based origin/partition stores | Accepted | 2026-10-15 |
+| [0011](../decisions/0011-sandbox-technology.md) | Sandboxing technology: Linux-first, Windows/macOS as recorded gaps | Accepted | 2026-10-15 |
+
+## Index
+
+The table above is the complete, ordered index. Column meanings:
+Status is the ADR's own declared status; the log is regenerated manually
+with each ADR addition (veyra-doctor verifies every ADR file is listed).
 
 ## ADR process
 
-1. Copy the template in [README of decisions](README.md) →
+1. Copy the template in [README of decisions](../decisions/README.md) →
    `NNNN-kebab-title.md` (sequential, zero-padded).
 2. Fill Context (with evidence links into `../research/`), Decision,
    Alternatives, Consequences, Revisit conditions.
 3. Add the row to the table above. CI (`veyra-doctor`) verifies structure
    and that every ADR is indexed here.
+
+## Status values
+
+Proposed (under discussion) | Accepted (load-bearing; may be cited as
+evidence) | Superseded by NNNN (kept for history) | Rejected (kept for
+the alternatives record).
+
+## Superseding and amending
+
+Decisions are never edited in place. A new ADR that supersedes an old
+one cites the invalidating evidence (research document + source-register
+entry), states what changed, and the old ADR's status line is updated to
+`Superseded by NNNN` — the only permitted edit to an accepted ADR.
 
 ## Revisit rules
 

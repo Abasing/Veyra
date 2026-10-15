@@ -11,6 +11,25 @@ transitions cite evidence (suite runs, commits, documents).
 Per-area pass-rate tables and suite revisions are appended here as phases
 complete; the current tables only reference research/design artifacts.
 
+## State vocabulary
+
+The matrix uses exactly the seven states defined in the
+[compatibility program](compatibility-program.md), in their canonical
+spelling, because automated checks enforce the vocabulary:
+
+1. **Not investigated**
+2. **Investigated**
+3. **Designed**
+4. **In development**
+5. **Partially implemented**
+6. **Tested with known failures**
+7. **Meets defined acceptance criteria**
+
+A row moves forward only with dated evidence; movement backward (a
+regression) is recorded, never silently rewritten. Suite-derived pass
+rates appear only in "Tested with known failures" and "Meets defined
+acceptance criteria" rows, cited with the suite revision.
+
 ## Platform areas
 
 | Area | State | Evidence / notes | Known failures | Remaining work |

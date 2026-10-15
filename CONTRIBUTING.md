@@ -21,7 +21,7 @@ what CI enforces.
   a subsystem boundary, introduces native code, or revises the process/security
   model, add or amend a decision record in `docs/decisions/` *before* merging.
   Triggers are listed in
-  [`docs/engineering/engineering-standards.md`](docs/engineering/engineering-standards.md#architectural-decision-records).
+  [`docs/engineering/engineering-standards.md`](docs/engineering/engineering-standards.md#12-architectural-decision-records).
 
 ## Workflow
 

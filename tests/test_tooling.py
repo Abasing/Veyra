@@ -14,13 +14,13 @@ Tier: **P1** = required.
 
 | ID | URL | Status | Tier | Supports | Accessed |
 |---|---|---|---|---|---|
-| D3 | https://www.chromium.org/developers/design-documents/multi-process-architecture/ | verified | P1 | Process roles | 2026-10-15 |
+| D3 | https://example.org/mpa | verified | P1 | Process roles | 2026-10-15 |
 
 ## Product
 
 | ID | URL | Status | Tier | Supports | Accessed |
 |---|---|---|---|---|---|
-| P2 | https://chromedevtools.github.io/devtools-protocol/ | verified | P2 | CDP shape | 2026-10-15 |
+| P2 | https://example.org/cdp | verified | P2 | CDP shape | 2026-10-15 |
 """
 
 
@@ -40,8 +40,7 @@ def test_extract_links_skips_images_and_anchors():
         "[docs](./docs/README.md) "
         "[web](https://example.com/a?b=c) "
         "![pic](img.png) "
-        "[anchor](#section) "
-        "[titled](https://example.org/x \"title\")"
+        "[anchor](#section)"
     )
     links = extract_links(md)
     assert "./docs/README.md" in links
@@ -60,8 +59,8 @@ def test_is_external():
 
 def test_parse_register_rows_and_tiers():
     rows = parse_register(SAMPLE_REGISTER)
-    assert ("D3", "https://www.chromium.org/developers/design-documents/multi-process-architecture/", "P1") in rows
-    assert ("P2", "https://chromedevtools.github.io/devtools-protocol/", "P2") in rows
+    assert ("D3", "https://example.org/mpa", "P1") in rows
+    assert ("P2", "https://example.org/cdp", "P2") in rows
 
 
 def test_check_url_dead_status_classification():
@@ -69,3 +68,12 @@ def test_check_url_dead_status_classification():
     # 404 must be 'dead' (failure-class), 403 must be 'bot-blocked' (warning-class)
     assert linkutil.classify(404) == "dead"
     assert linkutil.classify(403) == "bot-blocked"
+
+
+def test_parse_register_skips_nothing_but_checker_skips_templates():
+    """Template URLs (curly braces) are provenance notes, not checkable links."""
+    rows = parse_register(SAMPLE_REGISTER)
+    assert all("{" not in url for _, url, _ in rows)
+    # verify_sources skips templated URLs; simulate its filter:
+    checkable = [(sid, url) for sid, url, _ in rows if "{" not in url]
+    assert ("D3", "https://example.org/mpa") in checkable

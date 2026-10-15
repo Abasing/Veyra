@@ -95,28 +95,46 @@ MD_LINK_RE = re.compile(r"(?<!\!)\[[^\]]*\]\(([^)\s]+)\)")
 
 
 def extract_links(md_text: str) -> list[str]:
-    """Extracts inline markdown link targets (relative or absolute)."""
-    return MD_LINK_RE.findall(md_text)
+    """Extracts inline markdown link targets (relative or absolute).
+
+    Pure-anchor links (`#foo`) and image targets are excluded: they are
+    not link destinations for the external/relative checkers.
+    """
+    return [t for t in MD_LINK_RE.findall(md_text) if not t.startswith("#")]
 
 
 def is_external(target: str) -> bool:
     return target.startswith("http://") or target.startswith("https://")
 
 
-# Register row parsing: | ID | URL | Status | Tier | Supports | Accessed |
-REGISTER_ROW_RE = re.compile(r"^\|\s*([A-Z]+\d+\w*)\s*\|\s*(https?://[^|\s]+)\s*\|")
+# Register row shape: | ID | URL | Status | Tier | Supports | Accessed |
+REGISTER_ROW_RE = re.compile(r"^\|([^|]*\|){6}")
 
 
 def parse_register(text: str) -> list[tuple[str, str, str]]:
-    """Returns (id, url, tier) rows from source-register.md table sections."""
+    """Returns (id, url, tier) rows from source-register.md table sections.
+
+    The tier is read from the row's own Tier column (the register's
+    format), with a heading-level `Tier: **P1**` marker as fallback.
+    """
     rows: list[tuple[str, str, str]] = []
-    current_tier = "P2"
+    heading_tier = "P2"
     for line in text.splitlines():
-        tier_match = re.match(r"^##\s+.*Tier:\s*\*\*(P\d)\*\*", line)
-        if tier_match:
-            current_tier = tier_match.group(1)
+        tier_heading = re.match(r"^##\s+.*Tier:\s*\*\*(P\d)\*\*", line)
+        if tier_heading:
+            heading_tier = tier_heading.group(1)
             continue
-        m = REGISTER_ROW_RE.match(line)
-        if m:
-            rows.append((m.group(1), m.group(2), current_tier))
+        if not REGISTER_ROW_RE.match(line):
+            continue
+        cols = [c.strip() for c in line.split("|")]
+        # cols[0] is empty (leading pipe): id, url, status, tier, ...
+        if len(cols) < 6:
+            continue
+        sid, url, _status, tier = cols[1], cols[2], cols[3], cols[4]
+        if not sid or not url.startswith("http"):
+            continue
+        if re.fullmatch(r"P\d", tier):
+            rows.append((sid, url, tier))
+        else:
+            rows.append((sid, url, heading_tier))
     return rows

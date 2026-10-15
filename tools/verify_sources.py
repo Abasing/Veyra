@@ -55,6 +55,9 @@ def main(argv: list[str] | None = None) -> int:
     ok_count = 0
 
     for sid, url, tier in rows:
+        if "{" in url:
+            print(f"skip     [{tier}] {sid} template URL {url}")
+            continue
         result: UrlResult
         try:
             from linkutil import check_url

@@ -123,3 +123,35 @@ in the content layer until the Phase 5 binding-generator decision.
   `veyra-ipc` (message bytes), `veyra-serialize` (value bytes).
 - The dependency graph is what makes this tractable: leaf parsers cannot
   hide behavior behind service calls, so their tests are complete.
+
+## 4. Phase-gate additions
+
+Crates join this graph only at their roadmap phase, with the ADR that
+justifies the boundary cited in the crate's `Cargo.toml` header comment.
+The current tree contains `veyra-doctor` only; every row in §1's diagram
+is a target state, and the review checklist rejects PRs that add crates
+without both the roadmap phase and an ADR reference. When a boundary
+turns out wrong in practice (cohesion signals: types imported solely to
+satisfy visibility, cyclic test helpers, duplicated data structures),
+the correction is an ADR amendment plus a re-draw of this document —
+not a quiet merge of crates.
+
+## 5. External-crate isolation rules
+
+Every external dependency is consumed through a Veyra-owned wrapper
+type or module at exactly one boundary, so that replacement remains a
+local change:
+
+| External surface | Isolating boundary | Rule |
+|---|---|---|
+| `url`, `idna` | `veyra-url` | no other crate may call URL parsing |
+| `hyper`/`h2`/`rustls`/`quinn` | `veyra-net` internals | transport types never appear in public APIs |
+| `html5ever` | `veyra-html` | emits `veyra-dom` nodes only |
+| `boa_engine` | `veyra-script` | engine types never leave the facade (ADR-0002) |
+| `wgpu`/`tiny-skia`/`vello` | `veyra-gfx` | device/queue types never leave the trait |
+| `redb` | `veyra-storage` | database handles are crate-private |
+| `parley`/`rustybuzz`/`swash` | `veyra-text` | shaped-run types are internal |
+| `tokio` | services only | engine core stays synchronous |
+
+This is what converts "dependency risk" into "one-file swap": the audit
+table's candidates can be re-evaluated without cascading changes.

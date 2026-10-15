@@ -119,9 +119,9 @@ inject time/RNG; no wall-clock sleeps in engine tests.
 - Public API docs on every crate (`missing_docs = warn` workspace lint);
   architecture docs updated with behavior changes.
 - Research claims cite the source register with access dates; the
-  forbidden-claim scan (veyra-doctor) blocks marketing language
-  ("fully compatible", "production-ready browser", etc.) anywhere in
-  the repository.
+  forbidden-claim scan (veyra-doctor) blocks marketing language of
+  universal compatibility or readiness (the canonical forbidden list
+  lives in the veyra-doctor source) anywhere in the repository.
 - Compatibility statements live only in the matrix.
 
 ## 10. Logging, diagnostics, and privacy

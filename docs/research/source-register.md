@@ -25,7 +25,6 @@ scheduled check enforces liveness); **P2** = supporting/contextual.
 | D2 | https://www.chromium.org/developers/design-documents/ | verified | P1 | Design-doc index; subsystem doc discovery | 2026-10-15 |
 | D3 | https://www.chromium.org/developers/design-documents/multi-process-architecture/ | verified | P1 | Process roles, trust split, IPC rationale | 2026-10-15 |
 | D4 | https://www.chromium.org/developers/design-documents/site-isolation/ | verified | P1 | Site isolation goals/behavior | 2026-10-15 |
-| D5 | https://chromium.googlesource.com/chromium/src/+/main/docs/site_isolation/oopif.md | transient-5xx | P1 | OOPIF mechanics (corroborated by D4) | 2026-10-15 |
 | D6 | https://chromium.googlesource.com/chromium/src/+/main/docs/mojo_and_services.md | verified | P1 | Mojo IPC model, service architecture | 2026-10-15 |
 | D7 | https://chromium.googlesource.com/chromium/src/+/main/docs/process_model_and_site_isolation.md | transient-5xx | P1 | Process allocation/reuse policy | 2026-10-15 |
 | D8 | https://developer.chrome.com/docs/chromium/renderingng | verified | P1 | RenderingNG pipeline, property trees | 2026-10-15 |
@@ -152,12 +151,17 @@ scheduled check enforces liveness); **P2** = supporting/contextual.
 
 | ID | URL | Status | Tier | Supports | Accessed |
 |---|---|---|---|---|---|
-| E1 | https://crates.io/api/v1/crates/{name} | verified | P1 | All license/version/activity rows in the dependency audit | 2026-10-15 |
-| E2 | https://api.github.com/repos/{owner}/{repo} | verified | P1 | Repo licenses/activity (WPT, Test262, servo, html5lib-tests, quickjs-ng, Speedometer) | 2026-10-15 |
+| E1 | https://crates.io/api/v1/crates/{name} | template | P1 | All license/version/activity rows in the dependency audit | 2026-10-15 |
+| E2 | https://api.github.com/repos/{owner}/{repo} | template | P1 | Repo licenses/activity (WPT, Test262, servo, html5lib-tests, quickjs-ng, Speedometer) | 2026-10-15 |
 | E3 | https://raw.githubusercontent.com/boa-dev/boa/main/README.md | verified | P1 | Boa self-description quoted in javascript-and-wasm.md | 2026-10-15 |
 | E4 | https://raw.githubusercontent.com/trynova/nova/main/README.md | verified | P2 | Nova status claims | 2026-10-15 |
 
 ## Retired during verification (probed, dead — removed from citations)
+
+- D5 `chromium.googlesource.com/.../docs/site_isolation/oopif.md` (503
+  during the initial pass, then confirmed 404; the doc path is unresolved.
+  OOPIF behavior is cited via D4, which is verified. Re-search scheduled
+  with the next googlesource source-level pass.)
 
 - D9 `developer.chrome.com/blog/renderingng-architecture` (404 — superseded by D8)
 - D10 `docs/how_blink_works.md` (404; "How Blink works" is a Google Doc — cited instead via B2/B3/B4 READMEs)

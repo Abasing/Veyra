@@ -77,7 +77,7 @@ Chromium's extension platform (Manifest V3 era) [P1][P4][K]:
 
 **Interoperability note [P5]:** Firefox/Safari implement the WebExtensions
 model with documented deltas; there is no full cross-browser spec —
-"Chrome Web Store compatible" is a distribution claim, not an API contract.
+compatibility with the Chrome Web Store is a distribution claim, not an API contract.
 
 **Assessment / staged strategy (feeds ADR-0006 and the roadmap):**
 
