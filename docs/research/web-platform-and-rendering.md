@@ -251,8 +251,8 @@ mechanism** (Phase 1 exit criterion) — see [testing-and-performance.md](testin
 | Block/inline layout + intrinsic sizing | `veyra-layout` custom; flex/grid via `taffy` | 3, 7 |
 | Shaping/bidi/fallback fonts | `parley`+`rustybuzz`+`unicode-bidi` | 3, 7 |
 | Display list + paint order | `veyra-paint` | 3 |
-| Property trees/compositor scrolling | `veyra-compositor` (GPU path) | 7 |
-| Canvas/SVG/images | `veyra-canvas`, `resvg` integration | 7 |
+| Property trees/compositor scrolling | GPU compositor within `veyra-paint` + `veyra-gfx` (ADR-0005) | 7 |
+| Canvas/SVG/images | canvas module within `veyra-paint`; `resvg` integration | 7 |
 | A11y tree projection | `accesskit` integration | 10 |
 | Print/PDF | pure-Rust PDF writer (open gap) | 10 |
 

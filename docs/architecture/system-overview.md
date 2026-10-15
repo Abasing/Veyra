@@ -80,6 +80,7 @@ reason each deserves a boundary:
 | `veyra-executor` | Event loop, timers, microtasks; injectable time | 4 |
 | `veyra-script` | JS engine facade (engine-swappable) | 4 |
 | `veyra-webid` | Web IDL binding layer; keeps engine types out of Web APIs | 4–5 |
+| `veyra-serialize` | Structured clone and value serialization (postMessage/IndexedDB) | 5 |
 | `veyra-ipc` | Message definitions/transport for trust boundaries | 6 |
 | `veyra-storage` | Origin/partition-keyed persistence | 6 |
 | `veyra-sandbox` | OS sandbox integration | 6 |
