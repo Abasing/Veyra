@@ -1,0 +1,32 @@
+[package]
+name = "veyra-url"
+description = "Veyra's single URL parsing authority: WHATWG URL parsing, relative resolution, and origins (ADR-0008, dependency-graph §1 invariant 5)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+# Boundary justification (docs/architecture/dependency-graph.md §4/§5): veyra-url
+# is the ONLY URL parser in the engine — every other crate calls this one
+# (mirrors the Chromium centralized-URL finding, dossier networking §2). The
+# external `url` crate is consumed here and never leaks: the public surface is
+# Veyra-owned types (`Url`, `Origin`, `Host`, `UrlError`), so a future parser
+# replacement remains a one-crate change.
+#
+# IDNA: domain to-ASCII arrives transitively through `url`'s host parser
+# (idna/uts46) — declared here rather than duplicated as a direct dependency
+# because no Veyra code calls it directly.
+#
+# Roadmap phase: 2. ADR-0008 (networking stack adopts the WHATWG URL standard
+# via the `url` crate), docs/architecture/dependency-graph.md §2 (URL row,
+# "adopted Phase 2").
+
+[dependencies]
+url = { version = "2.5.4" }
+
+[dev-dependencies]
+serde_json = "1.0.145"
+
+[lints]
+workspace = true

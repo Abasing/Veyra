@@ -6,7 +6,12 @@
 # `veyra-shell` (ADR-0007/0012).
 [workspace]
 resolver = "3"
-members = ["tools/veyra-doctor", "crates/veyra-gfx", "crates/veyra-shell"]
+members = [
+    "tools/veyra-doctor",
+    "crates/veyra-gfx",
+    "crates/veyra-shell",
+    "crates/veyra-url",
+]
 
 [workspace.package]
 version = "0.1.0"
@@ -36,6 +41,12 @@ panic = "deny"
 # windowing behavior drift inside a SemVer-compatible range is exactly the
 # kind of nondeterminism the deterministic-rendering harness must not inherit.
 [workspace.dependencies]
+# Phase 2 document pipeline (see crates/*/Cargo.toml boundary comments):
+# veyra-url wraps the WHATWG URL parser as the engine's single parsing
+# authority (dependency-graph §1 invariant 5). veyra-net isolates hyper's
+# transport (ADR-0008); veyra-html isolates html5ever (ADR-0003).
+url = "2.5.4"
+serde_json = "1.0.145"
 # ADR-0012: default-features off + explicit platform features drops winit's
 # optional Wayland client-side decorations (wayland-csd-adwaita ->
 # sctk-adwaita -> ab_glyph -> ttf-parser, flagged unmaintained by RustSec)
