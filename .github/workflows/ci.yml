@@ -48,10 +48,13 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
-      - name: Tests
-        run: cargo test --workspace
       - name: Doc links
         run: cargo doc --workspace --no-deps
+      # Tests run in the headless-shell job under Xvfb: the workspace suite
+      # includes the window smoke tests, which require a display server and
+      # fail loudly without one. Keeping them here (no display) would be red
+      # every run; skipping them silently would be dishonest. Under Xvfb
+      # every test in the workspace genuinely executes on every push.
 
   python-tools:
     name: Python tooling (ruff, pytest)
@@ -88,10 +91,11 @@ jobs:
           sudo apt-get install -y --no-install-recommends xvfb libxkbcommon-x11-0
       - name: Build shell
         run: cargo build --locked -p veyra-shell
-      - name: Window smoke tests (real event loop under Xvfb)
-        # These tests assert a real window was created, frames were
-        # presented, and shutdown was clean — not skipped-but-green.
-        run: xvfb-run -a cargo test -p veyra-shell --test window_smoke -- --nocapture
+      - name: Workspace tests under Xvfb (includes window smoke)
+        # Every test runs for real here: CPU-rendering/golden/CLI tests do
+        # not need the display; the window smoke tests do and get one.
+        # Nothing is skipped on CI.
+        run: xvfb-run -a cargo test --workspace
       - name: Screenshot CLI repeatability (no display server)
         run: |
           target/debug/veyra-shell screenshot --output "$RUNNER_TEMP/shot-a.png" > "$RUNNER_TEMP/report-a.txt"
