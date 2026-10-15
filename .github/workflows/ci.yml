@@ -71,6 +71,38 @@ jobs:
       - name: Tests (pytest)
         run: python3 -m pytest tests/ -q
 
+  headless-shell:
+    name: Phase 1 shell (xvfb window smoke + deterministic rendering)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable (reads rust-toolchain.toml)
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+      - name: Install X libraries for the headless window test
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb libxkbcommon-x11-0
+      - name: Build shell
+        run: cargo build --locked -p veyra-shell
+      - name: Window smoke tests (real event loop under Xvfb)
+        # These tests assert a real window was created, frames were
+        # presented, and shutdown was clean — not skipped-but-green.
+        run: xvfb-run -a cargo test -p veyra-shell --test window_smoke -- --nocapture
+      - name: Screenshot CLI repeatability (no display server)
+        run: |
+          target/debug/veyra-shell screenshot --output "$RUNNER_TEMP/shot-a.png" > "$RUNNER_TEMP/report-a.txt"
+          target/debug/veyra-shell screenshot --output "$RUNNER_TEMP/shot-b.png" > "$RUNNER_TEMP/report-b.txt"
+          h1="$(sed -n 's/^pixels-hash=sha256://p' "$RUNNER_TEMP/report-a.txt")"
+          h2="$(sed -n 's/^pixels-hash=sha256://p' "$RUNNER_TEMP/report-b.txt")"
+          echo "hash-a=$h1"
+          echo "hash-b=$h2"
+          test -n "$h1" && test -n "$h2" && test "$h1" = "$h2"
+          test -f "$RUNNER_TEMP/shot-a.png" && test -f "$RUNNER_TEMP/shot-b.png"
+
   supply-chain:
     name: Supply chain (cargo-deny)
     runs-on: ubuntu-24.04
