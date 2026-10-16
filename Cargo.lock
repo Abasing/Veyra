@@ -3039,6 +3039,8 @@ dependencies = [
  "precomputed-hash",
  "selectors",
  "serde_json",
+ "veyra-dom",
+ "veyra-url",
 ]
 
 [[package]]

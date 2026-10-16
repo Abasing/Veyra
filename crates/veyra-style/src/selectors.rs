@@ -174,7 +174,9 @@ fn parse_pseudo_element_name(name: &str) -> Option<PseudoElement> {
 /// batch matches elements against it.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SelectorList {
-    upstream: UpstreamList<VeyraSelectorImpl>,
+    /// The upstream list (crate-internal access: the cascade matches
+    /// per-complex-selector to track the matching specificity).
+    pub(crate) upstream: UpstreamList<VeyraSelectorImpl>,
 }
 
 impl SelectorList {

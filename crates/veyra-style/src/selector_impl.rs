@@ -63,6 +63,12 @@ macro_rules! veyra_string_type {
             }
         }
 
+        impl AsRef<str> for $name {
+            fn as_ref(&self) -> &str {
+                &self.0
+            }
+        }
+
         impl PrecomputedHash for $name {
             fn precomputed_hash(&self) -> u32 {
                 string_precomputed_hash(&self.0)

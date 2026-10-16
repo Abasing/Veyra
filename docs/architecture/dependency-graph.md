@@ -139,8 +139,13 @@ justifies the boundary cited in the crate's `Cargo.toml` header comment.
 The current tree contains `veyra-doctor`, `veyra-gfx` (Phase 1, brought
 forward per roadmap — ADR-0005/0012), `veyra-shell` (Phase 1,
 ADR-0007/0012; Phase 2 adds the browser layer), `veyra-url`,
-`veyra-dom`, `veyra-html`, and `veyra-net` (Phase 2 — ADR-0008/0013);
-every other row in §1's diagram is a target state, and
+`veyra-dom`, `veyra-html`, and `veyra-net` (Phase 2 — ADR-0008/0013),
+and `veyra-style` (Phase 3 — ADR-0003/0014: parsing consumes
+cssparser/selectors at the crate boundary; the batch-2 cascade activates
+the `DOM --> STYLE` and `STYLE --> URL` edges — matching adapts
+`veyra-dom` elements to the `selectors` matcher, and `@import`/base-URL
+resolution goes through `veyra-url`); every other row in §1's diagram is
+a target state, and
 the review checklist rejects PRs that add crates without both the
 roadmap phase and an ADR reference. When a boundary
 turns out wrong in practice (cohesion signals: types imported solely to

@@ -34,6 +34,13 @@ selectors = { version = "0.41.0", default-features = false }
 # selectors' SelectorImpl associated types must implement PrecomputedHash
 # (the crate's bloom-filter/map fast-path hashing contract).
 precomputed-hash = "0.1.1"
+# Matching/cascade edges (dependency-graph §1: DOM --> STYLE, STYLE --> URL).
+# `veyra-dom` is the match target: the cascade batch adapts veyra-dom
+# elements to the `selectors` matcher and walks the arena tree to compute
+# styles. `veyra-url` resolves `@import`/`@namespace` targets against a
+# stylesheet base URL at style-set level (single URL authority, invariant 5).
+veyra-dom = { path = "../veyra-dom" }
+veyra-url = { path = "../veyra-url" }
 
 [dev-dependencies]
 serde_json = "1.0.145"

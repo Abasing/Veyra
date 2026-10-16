@@ -11,6 +11,12 @@
 //! parser replacement is a one-crate change (dependency-graph §1
 //! invariant 5, the same shape as `veyra-url`/`veyra-html`).
 //!
+//! Batch 2 (roadmap Phase 3): matching, cascade, and computed values —
+//! [`VeyraElement`] adapts `veyra-dom` trees to the `selectors` matcher;
+//! [`StyleSet`] + [`compute_styles`] run the Cascade 5 pipeline
+//! (origins, layers, specificity, source order, inline style, revert)
+//! into per-element [`ComputedValues`] for the working property set.
+//!
 //! ADR-0003 adopts cssparser/selectors (MPL-2.0, file-level license
 //! isolation); ADR-0014 records the Phase 3 entry spike that chose the
 //! hand-built cascade over stylo and quantifies the deferred stylo
@@ -20,13 +26,10 @@
 //!
 //! Structure the engine will act on is parsed into typed values:
 //! style-rule selector lists, declaration names/important flags,
-//! keyframe selectors. Everything the cascade will interpret *later*
-//! (declaration values) is retained as a [`RetainedValue`] — an owned
-//! token tree that round-trips through the CSS Syntax canonical
-//! serialization. Typed property values arrive with the cascade batch
-//! (Phase 3, batch 2); retained values keep that batch's optionality:
-//! unknown properties must parse, retain, and re-serialize losslessly
-//! (custom properties are CSS).
+//! keyframe selectors. Declaration values flow two ways: retained as a
+//! [`RetainedValue`] (canonical serialization, custom properties are
+//! CSS), and — from batch 2 — parsed into typed longhands and computed
+//! by the cascade (see [`cascade`]).
 //!
 //! # Scope notes (deliberate deferrals, each with a roadmap home)
 //!
@@ -56,6 +59,8 @@
 //!
 //! # Examples
 //!
+//! Parsing (batch 1 surface):
+//!
 //! ```
 //! use veyra_style::{Limits, Stylesheet};
 //!
@@ -70,21 +75,54 @@
 //!     "h1 { color: crimson; }"
 //! );
 //! ```
+//!
+//! Matching and cascade (batch 2 surface):
+//!
+//! ```
+//! use veyra_style::{compute_styles, Limits, StyleSet, Stylesheet};
+//! use veyra_dom::{QualName, Tree};
+//! use veyra_url::Url;
+//!
+//! let mut set = StyleSet::new();
+//! set.append_author(
+//!     Stylesheet::parse("p.tip { color: teal }", &Limits::default()).expect("css"),
+//!     Some(Url::parse("https://example.org/page").expect("url")),
+//! );
+//!
+//! let url = Url::parse("https://example.org/page").expect("url");
+//! let mut tree = Tree::new_document(url.origin()).expect("tree");
+//! let doc = tree.document().expect("document");
+//! let p = tree.create_element(QualName::html("p"), vec![]).expect("limit");
+//! tree.append(doc, p).expect("hierarchy");
+//!
+//! let styles = compute_styles(&tree, &set);
+//! let style = styles.get(p).expect("element styled");
+//! // `p.tip` did not match (no class); the UA defaults hold.
+//! assert_eq!(style.display, veyra_style::Display::Block);
+//! ```
 
+mod cascade;
 #[cfg(test)]
 mod corpus;
 mod declarations;
 mod error;
 mod limits;
+mod matching;
 mod rules;
 mod selector_impl;
 mod selectors;
 mod stylesheet;
 mod tokens;
+mod ua;
+mod values;
 
+pub use cascade::{
+    ComputedStyleMap, ImportRequest, Origin, StyleSet, compute_styles, compute_styles_with,
+};
 pub use declarations::{Declaration, DeclarationList};
 pub use error::{ParseError, SelectorErrorKind, SyntaxKind};
 pub use limits::{Limits, MAX_STYLESHEET_BYTES};
+pub use matching::{MatchOptions, VeyraElement};
 pub use rules::{CssRule, Keyframe, KeyframeSelector, LayerRule};
 pub use selector_impl::{
     AttrValue, Identifier, LocalName, NamespacePrefix, NamespaceUrl, PseudoClass, PseudoElement,
@@ -93,3 +131,8 @@ pub use selector_impl::{
 pub use selectors::SelectorList;
 pub use stylesheet::Stylesheet;
 pub use tokens::RetainedValue;
+pub use values::{
+    BorderStyle, Color, ColorValue, ComputedValues, DEFAULT_FONT_SIZE, Display, FontFamily,
+    FontFamilyName, FontStyle, LengthPercent, LineHeight, MarginSizing, Sides, Sizing, TextAlign,
+    TextDecorationLine,
+};
