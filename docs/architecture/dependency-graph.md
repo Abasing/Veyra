@@ -5,10 +5,12 @@ status: Updated (Phase 1) | last-updated: 2026-10-15 | companion-to: system-over
 This document defines the **allowed dependency directions** between Veyra
 crates and the invariants that keep them honest. It is the contract CI and
 review enforce as crates appear; the graph below is the target state at
-Phase 8. Current tree (Phase 2): `veyra-doctor` (tooling), `veyra-gfx`
+Phase 8. Current tree (Phase 3): `veyra-doctor` (tooling), `veyra-gfx`
 (CPU raster), `veyra-shell` (application root; owns the navigation/session
 browser layer), `veyra-url` (parsing authority), `veyra-dom` (arena tree),
-`veyra-html` (HTML parsing), `veyra-net` (network service).
+`veyra-html` (HTML parsing), `veyra-net` (network service), `veyra-style`
+(CSS parsing/cascade), `veyra-layout` (block/inline layout; text
+measurement is the `TextMeasurer` seam until `veyra-text` arrives).
 
 ## 1. Engine-crate dependency rules
 

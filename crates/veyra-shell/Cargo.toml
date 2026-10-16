@@ -40,6 +40,10 @@ veyra-net = { path = "../veyra-net", version = "0.1.0" }
 # the StyleSet, and computing element styles (dependency-graph §1: the
 # shell is the root that composes services).
 veyra-style = { path = "../veyra-style", version = "0.1.0" }
+# Phase 3 batch 4: the `open --layout` report runs the fragment-tree
+# layout over loaded documents (the shell is the root that composes the
+# content layer; veyra-layout performs no I/O of its own).
+veyra-layout = { path = "../veyra-layout", version = "0.1.0" }
 
 [dev-dependencies]
 criterion = { workspace = true }

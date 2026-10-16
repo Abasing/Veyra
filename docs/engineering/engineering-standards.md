@@ -79,6 +79,7 @@ parser crate is not mandatory for a docs-only change.
 | DOM node count | 2,000,000 | veyra-dom |
 | Nesting depth (elements) | 512 | veyra-html |
 | Stylesheet size | 16 MiB | veyra-style |
+| Layout boxes + inline items + tokens + fragments (per run) | 200,000 | veyra-layout |
 | Response body (unbounded streams aside) | 2 GiB streamed, memory-capped buffers | veyra-net |
 | Redirect chain | 20 | veyra-net |
 | Header count/size | 128 / 64 KiB | veyra-net |

@@ -21,6 +21,10 @@ dd { display: block; margin-left: 40px; }
 blockquote, figure { margin: 1em 40px; }
 center { display: block; text-align: center; }
 
+div, address, article, aside, details, dialog, figcaption, footer,
+form, header, hgroup, main, nav, section, summary { display: block; }
+hr { display: block; margin: 0.5em auto; }
+
 h1, h2, h3, h4, h5, h6 { display: block; font-weight: bold; }
 h1 { font-size: 2em; margin: 0.67em 0; }
 h2 { font-size: 1.5em; margin: 0.83em 0; }

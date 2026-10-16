@@ -2993,6 +2993,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "veyra-layout"
+version = "0.1.0"
+dependencies = [
+ "veyra-dom",
+ "veyra-html",
+ "veyra-style",
+ "veyra-url",
+]
+
+[[package]]
 name = "veyra-net"
 version = "0.1.0"
 dependencies = [
@@ -3026,6 +3036,7 @@ dependencies = [
  "veyra-dom",
  "veyra-gfx",
  "veyra-html",
+ "veyra-layout",
  "veyra-net",
  "veyra-style",
  "veyra-url",

@@ -8,12 +8,15 @@
 //! Phase 2 adds the first real document pipeline — `veyra-shell open`
 //! loads URLs (or `file://` paths) through the navigation pipeline and
 //! prints DOM dumps; session history and crash-safe session persistence
-//! work. Phase 3 (batches 1-3) puts the CSS cascade behind it: every
-//! loaded document collects its `<style>`/`<link>` sheets (with guarded
-//! `@import` following), builds the style set, and computes per-element
-//! styles (`open --styles` prints the report). **The window still shows
-//! the diagnostic pattern**: web-content rendering (layout, text, paint)
-//! is the remaining Phase 3 work. Capability claims live only in
+//! work. Phase 3 (batches 1-4) puts the CSS cascade and layout behind
+//! it: every loaded document collects its `<style>`/`<link>` sheets
+//! (with guarded `@import` following), builds the style set, and
+//! computes per-element styles (`open --styles`), then lays the
+//! document out into the fragment tree (`open --layout` prints the
+//! deterministic report; the fixed-metrics interim text provider stands
+//! in until the veyra-text batch). **The window still shows the
+//! diagnostic pattern**: web-content rendering (paint, raster) is the
+//! remaining Phase 3 work. Capability claims live only in
 //! `docs/roadmap/compatibility-matrix.md`.
 //!
 //! Module map:
@@ -80,9 +83,17 @@ pub fn execute(command: cli::Command) -> Result<(), error::ShellError> {
             urls,
             dump_dom,
             dump_styles,
+            dump_layout,
             timeout_ms,
             session_file,
-        } => run_open_command(&urls, dump_dom, dump_styles, timeout_ms, session_file),
+        } => run_open_command(
+            &urls,
+            dump_dom,
+            dump_styles,
+            dump_layout,
+            timeout_ms,
+            session_file,
+        ),
     }
 }
 
@@ -180,6 +191,7 @@ fn run_open_command(
     urls: &[String],
     dump_dom: bool,
     dump_styles: bool,
+    dump_layout: bool,
     timeout_ms: Option<u64>,
     session_file: Option<std::path::PathBuf>,
 ) -> Result<(), error::ShellError> {
@@ -221,6 +233,9 @@ fn run_open_command(
                     if dump_styles {
                         print!("{}", format_style_report(&document));
                     }
+                    if dump_layout {
+                        print!("{}", format_layout_report(&document)?);
+                    }
                     let entry = browser::SessionEntry::from_document(&document);
                     match nav.commit(entry) {
                         Ok(()) => Ok(()),
@@ -252,6 +267,13 @@ fn run_open_command(
                     if dump_dom {
                         print!("{}", veyra_html::dump_tree(&document.tree));
                     }
+                    if dump_layout {
+                        print!(
+                            "{}",
+                            format_layout_report(&document)
+                                .map_err(error::ShellError::LoadFailed)?
+                        );
+                    }
                     nav.commit(browser::SessionEntry::from_document(&document))
                         .map_err(error::ShellError::Navigation)?;
                 }
@@ -270,6 +292,13 @@ fn run_open_command(
                     println!("== forward: {}", document.url.as_str());
                     if dump_dom {
                         print!("{}", veyra_html::dump_tree(&document.tree));
+                    }
+                    if dump_layout {
+                        print!(
+                            "{}",
+                            format_layout_report(&document)
+                                .map_err(error::ShellError::LoadFailed)?
+                        );
                     }
                     nav.commit(browser::SessionEntry::from_document(&document))
                         .map_err(error::ShellError::Navigation)?;
@@ -294,6 +323,26 @@ fn run_open_command(
         return Err(error::ShellError::LoadFailed(message));
     }
     Ok(())
+}
+
+/// Formats the fragment-tree layout report (`open --layout`): the
+/// document is laid out at the shell's default viewport with the
+/// deterministic fixed-metrics text provider (the interim measurement
+/// contract — the veyra-text batch replaces it behind the same trait).
+/// A layout failure (limits) is a typed error, surfaced like a load
+/// failure: the engine could not produce a render tree within its
+/// resource budget.
+fn format_layout_report(document: &browser::loader::LoadedDocument) -> Result<String, String> {
+    let viewport = config::Config::default().window;
+    let result = veyra_layout::layout_document(
+        &document.tree,
+        &document.styles.computed,
+        (viewport.width, viewport.height),
+        &veyra_layout::FixedMetrics,
+        veyra_layout::LayoutLimits::default(),
+    )
+    .map_err(|error| error.to_string())?;
+    Ok(result.to_dump_string())
 }
 
 /// Formats the per-element computed-style report (`open --styles`): one
