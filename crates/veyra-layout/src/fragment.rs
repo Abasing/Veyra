@@ -1,23 +1,28 @@
 //! The fragment tree: layout's output and the paint batch's input.
 //!
 //! Every laid-out box becomes a [`Fragment::Box`] carrying its three
-//! rectangular extents (border/padding/content) and its children; every
-//! laid-out text run becomes a [`Fragment::Text`] carrying the resolved
-//! run and its inline-box rectangle. Coordinates are **absolute page
-//! pixels** (f32, origin top-left) — the raster surface's coordinate
-//! system — so the paint batch and the deterministic dump consume
-//! fragments without further mapping. A later batch that needs
-//! container-relative geometry (scrolling, damage tracking) can rebase;
-//! the change is local to this module and the emitters.
+//! rectangular extents (border/padding/content), its children, and the
+//! paint-affecting computed values it was laid out under (background
+//! color, border colors — baked in at box-tree build so `veyra-paint`
+//! needs no style access; the dependency-graph edge stays `PAINT -->
+//! LAYOUT` only). Every laid-out text run becomes a [`Fragment::Text`]
+//! carrying the resolved run, its inline-box rectangle, and its computed
+//! text color. Coordinates are **absolute page pixels** (f32, origin
+//! top-left) — the raster surface's coordinate system — so the paint
+//! batch and the deterministic dump consume fragments without further
+//! mapping. A later batch that needs container-relative geometry
+//! (scrolling, damage tracking) can rebase; the change is local to this
+//! module and the emitters.
 //!
 //! Vertical geometry of a text fragment: the rect is the font's content
 //! area (ascent..descent of the owning style), not the full line box —
 //! line-box leading is a line-layout detail the paint batch does not
-//! need. With the interim [`FixedMetrics`](crate::FixedMetrics) provider
-//! that is an em-box-sized rect; a real font provider produces its own
-//! metrics behind the same fragment shape.
+//! need. With the [`FixedMetrics`](crate::FixedMetrics) provider that is
+//! an em-box-sized rect; a real font provider produces its own metrics
+//! behind the same fragment shape.
 
 use veyra_dom::NodeId;
+use veyra_style::{Color, Sides};
 
 use crate::geometry::PhysicalRect;
 
@@ -52,6 +57,14 @@ pub struct BoxFragment {
     /// Child fragments (block children, or the line contents of an
     /// inline formatting context).
     pub children: Vec<Fragment>,
+    /// The box's computed background color (`background-color` after the
+    /// cascade; transparent for anonymous boxes unless inherited — paint
+    /// skips fully transparent fills).
+    pub background: Color,
+    /// The box's computed border colors (used border *widths* are
+    /// derivable from the border/padding rects — a side with zero used
+    /// width paints nothing).
+    pub border_colors: Sides<Color>,
 }
 
 /// A laid-out text run.
@@ -63,6 +76,8 @@ pub struct TextFragment {
     pub text: String,
     /// The run's font content-area rectangle (absolute page coordinates).
     pub rect: PhysicalRect,
+    /// The run's computed text color (`color` after the cascade).
+    pub color: Color,
 }
 
 impl Fragment {

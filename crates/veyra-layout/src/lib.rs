@@ -104,6 +104,11 @@ pub use geometry::{LogicalOffset, LogicalSize, PhysicalRect, WritingMode};
 pub use limits::{LayoutLimits, MAX_BOXES};
 pub use text::{FixedMetrics, FontQuery, LineMetrics, ShapedMetrics, TextMeasurer};
 
+// Re-exported so paint-stage consumers (veyra-paint) can name the types
+// the fragments carry without a direct dependency on veyra-style (the
+// dependency-graph edge stays PAINT --> LAYOUT only).
+pub use veyra_style::{Color, Sides};
+
 /// The budget shared across box-tree construction and layout (the
 /// limits-table row bounds the *whole run*, both phases together).
 use limits::Budget;

@@ -30,7 +30,7 @@
 //!   (unicode-bidi is the veyra-text batch's work item).
 
 use veyra_dom::NodeId;
-use veyra_style::{ComputedValues, LineHeight, TextAlign};
+use veyra_style::{Color, ComputedValues, LineHeight, TextAlign};
 
 use crate::box_tree::{Box, InlineItem};
 use crate::error::LayoutError;
@@ -184,13 +184,14 @@ struct LineItem {
 }
 
 enum LineItemKind {
-    /// A word: text, node provenance, and its font metrics (for the
-    /// fragment's content-area rect).
+    /// A word: text, node provenance, its font metrics (for the
+    /// fragment's content-area rect), and its computed color (for paint).
     Word {
         node: NodeId,
         text: String,
         font_ascent: f32,
         font_descent: f32,
+        color: Color,
     },
     /// An atomic inline-level box with its baseline (from its border-box
     /// top), laid out.
@@ -324,6 +325,7 @@ pub(crate) fn layout_inline_flow(
                             text,
                             font_ascent,
                             font_descent,
+                            color,
                         } => {
                             budget.charge()?;
                             fragments.push(Fragment::Text(TextFragment {
@@ -337,6 +339,7 @@ pub(crate) fn layout_inline_flow(
                                     item.advance,
                                     font_ascent + font_descent,
                                 ),
+                                color,
                             }));
                         }
                         LineItemKind::Atomic(mut fragment, baseline) => {
@@ -387,6 +390,7 @@ pub(crate) fn layout_inline_flow(
                         text,
                         font_ascent: metrics.ascent,
                         font_descent: metrics.descent,
+                        color: style.color,
                     },
                 });
                 line.x += width;

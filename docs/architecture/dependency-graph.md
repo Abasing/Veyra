@@ -9,11 +9,14 @@ Phase 8. Current tree (Phase 3): `veyra-doctor` (tooling), `veyra-gfx`
 (CPU raster), `veyra-shell` (application root; owns the navigation/session
 browser layer), `veyra-url` (parsing authority), `veyra-dom` (arena tree),
 `veyra-html` (HTML parsing), `veyra-net` (network service), `veyra-style`
-(CSS parsing/cascade), `veyra-layout` (block/inline layout), and
+(CSS parsing/cascade), `veyra-layout` (block/inline layout),
 `veyra-text` (font collection, shaping, bidi — ADR-0015; the `LAYOUT -->
 TEXT` edge is realized: layout's `ShapedMetrics` measures through the
 shared `FontLibrary`, with `FixedMetrics` as the deterministic fallback
-and golden-fixture provider).
+and golden-fixture provider), and `veyra-paint` (display lists — the
+`PAINT --> LAYOUT` edge; fragments carry their paint-affecting computed
+values so no style edge exists; rasterization via `PAINT --> GFX` is the
+next paint increment).
 
 ## 1. Engine-crate dependency rules
 
@@ -153,7 +156,10 @@ resolution goes through `veyra-url`), `veyra-layout` (Phase 3 — ADR-0003
 decision 3: custom block/inline; box-tree, BFC/IFC, intrinsic sizing),
 and `veyra-text` (Phase 3 — ADR-0015: rustybuzz/ttf-parser/unicode-bidi
 behind Veyra-owned types; the `LAYOUT --> TEXT` edge activates via
-`veyra-layout`'s `ShapedMetrics` adapter); every other row in §1's
+`veyra-layout`'s `ShapedMetrics` adapter), and `veyra-paint` (Phase 3 —
+no ADR required: dependency-free crate per ADR-0003 decision 1's
+display-list pipeline; the `PAINT --> LAYOUT` edge with paint data baked
+into fragments); every other row in §1's
 diagram is a target state, and
 the review checklist rejects PRs that add crates without both the
 roadmap phase and an ADR reference. When a boundary

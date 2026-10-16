@@ -84,6 +84,7 @@ pub fn execute(command: cli::Command) -> Result<(), error::ShellError> {
             dump_dom,
             dump_styles,
             dump_layout,
+            dump_paint,
             timeout_ms,
             session_file,
         } => run_open_command(
@@ -91,6 +92,7 @@ pub fn execute(command: cli::Command) -> Result<(), error::ShellError> {
             dump_dom,
             dump_styles,
             dump_layout,
+            dump_paint,
             timeout_ms,
             session_file,
         ),
@@ -192,6 +194,7 @@ fn run_open_command(
     dump_dom: bool,
     dump_styles: bool,
     dump_layout: bool,
+    dump_paint: bool,
     timeout_ms: Option<u64>,
     session_file: Option<std::path::PathBuf>,
 ) -> Result<(), error::ShellError> {
@@ -236,6 +239,9 @@ fn run_open_command(
                     if dump_layout {
                         print!("{}", format_layout_report(&document)?);
                     }
+                    if dump_paint {
+                        print!("{}", format_paint_report(&document)?);
+                    }
                     let entry = browser::SessionEntry::from_document(&document);
                     match nav.commit(entry) {
                         Ok(()) => Ok(()),
@@ -274,6 +280,13 @@ fn run_open_command(
                                 .map_err(error::ShellError::LoadFailed)?
                         );
                     }
+                    if dump_paint {
+                        print!(
+                            "{}",
+                            format_paint_report(&document)
+                                .map_err(error::ShellError::LoadFailed)?
+                        );
+                    }
                     nav.commit(browser::SessionEntry::from_document(&document))
                         .map_err(error::ShellError::Navigation)?;
                 }
@@ -297,6 +310,13 @@ fn run_open_command(
                         print!(
                             "{}",
                             format_layout_report(&document)
+                                .map_err(error::ShellError::LoadFailed)?
+                        );
+                    }
+                    if dump_paint {
+                        print!(
+                            "{}",
+                            format_paint_report(&document)
                                 .map_err(error::ShellError::LoadFailed)?
                         );
                     }
@@ -351,6 +371,25 @@ fn format_layout_report(document: &browser::loader::LoadedDocument) -> Result<St
     )
     .map_err(|error| error.to_string())?;
     Ok(result.to_dump_string())
+}
+
+/// Formats the display-list paint report (`open --paint`): the laid-out
+/// document's fragment tree is walked into a display list (the paint
+/// stage's output — rendering-pipeline.md §1) and dumped. A paint
+/// failure (limits) is a typed error, surfaced like a load failure.
+fn format_paint_report(document: &browser::loader::LoadedDocument) -> Result<String, String> {
+    let viewport = config::Config::default().window;
+    let result = veyra_layout::layout_document(
+        &document.tree,
+        &document.styles.computed,
+        (viewport.width, viewport.height),
+        shaped_metrics(),
+        veyra_layout::LayoutLimits::default(),
+    )
+    .map_err(|error| error.to_string())?;
+    let list = veyra_paint::build_display_list(&result, veyra_paint::PaintLimits::default())
+        .map_err(|error| error.to_string())?;
+    Ok(list.to_dump_string())
 }
 
 /// Formats the per-element computed-style report (`open --styles`): one

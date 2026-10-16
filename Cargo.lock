@@ -3094,6 +3094,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "veyra-paint"
+version = "0.1.0"
+dependencies = [
+ "veyra-dom",
+ "veyra-html",
+ "veyra-layout",
+ "veyra-style",
+ "veyra-url",
+]
+
+[[package]]
 name = "veyra-shell"
 version = "0.1.0"
 dependencies = [
@@ -3111,6 +3122,7 @@ dependencies = [
  "veyra-html",
  "veyra-layout",
  "veyra-net",
+ "veyra-paint",
  "veyra-style",
  "veyra-url",
  "winit",

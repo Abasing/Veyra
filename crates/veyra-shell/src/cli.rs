@@ -49,6 +49,9 @@ pub enum Command {
         /// Print the deterministic fragment-tree layout report for each
         /// visited document.
         dump_layout: bool,
+        /// Print the deterministic display-list paint report for each
+        /// visited document.
+        dump_paint: bool,
         /// Response deadline override, milliseconds.
         timeout_ms: Option<u64>,
         /// Write the final session history to this file.
@@ -226,6 +229,7 @@ fn parse_open(args: &[String]) -> Result<ParseOutcome, UsageError> {
     let mut dump_dom = false;
     let mut dump_styles = false;
     let mut dump_layout = false;
+    let mut dump_paint = false;
     let mut timeout_ms: Option<u64> = None;
     let mut session_file: Option<PathBuf> = None;
 
@@ -249,6 +253,12 @@ fn parse_open(args: &[String]) -> Result<ParseOutcome, UsageError> {
                     return Err(UsageError("--layout given twice".to_string()));
                 }
                 dump_layout = true;
+            }
+            "--paint" => {
+                if dump_paint {
+                    return Err(UsageError("--paint given twice".to_string()));
+                }
+                dump_paint = true;
             }
             "--timeout-ms" => {
                 let value = take_value(args, i + 1, "--timeout-ms")?;
@@ -284,6 +294,7 @@ fn parse_open(args: &[String]) -> Result<ParseOutcome, UsageError> {
         dump_dom,
         dump_styles,
         dump_layout,
+        dump_paint,
         timeout_ms,
         session_file,
     }))
@@ -400,8 +411,11 @@ OPTIONS (open only):
                         followed with resource guards).
     --layout            Print the deterministic fragment-tree layout
                         report of every visited document (stdout; the
-                        fixed-metrics interim text provider — the
-                        veyra-text batch replaces it).
+                        shaped text provider — real font metrics through
+                        veyra-text).
+    --paint             Print the deterministic display-list paint
+                        report of every visited document (stdout; the
+                        paint-order walk over the fragment tree).
     --timeout-ms N      Response deadline override in milliseconds.
     --session-file PATH Write the final session history (JSON, written
                         atomically: temp + fsync + rename).

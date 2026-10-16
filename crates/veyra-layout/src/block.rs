@@ -259,6 +259,8 @@ pub(crate) fn layout_block_box(
             content_height,
         ),
         children,
+        background: b.style.background_color,
+        border_colors: b.style.border_color,
     });
 
     // -- Collapse metadata ------------------------------------------------

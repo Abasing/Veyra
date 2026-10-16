@@ -81,6 +81,7 @@ parser crate is not mandatory for a docs-only change.
 | Stylesheet size | 16 MiB | veyra-style |
 | Layout boxes + inline items + tokens + fragments (per run) | 200,000 | veyra-layout |
 | Shaping run (single `shape` call) | 2,000,000 scalars | veyra-text |
+| Display-list commands (per frame) | 1,000,000 | veyra-paint |
 | Response body (unbounded streams aside) | 2 GiB streamed, memory-capped buffers | veyra-net |
 | Redirect chain | 20 | veyra-net |
 | Header count/size | 128 / 64 KiB | veyra-net |

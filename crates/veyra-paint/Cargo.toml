@@ -1,0 +1,36 @@
+[package]
+name = "veyra-paint"
+description = "Veyra's paint stage: display-list construction from layout fragments (ADR-0003, rendering-pipeline §4)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+# Boundary justification (docs/architecture/dependency-graph.md §1): paint
+# consumes the fragment tree (PAINT --> LAYOUT) — fragments carry their
+# paint-affecting computed values (background, border colors, text color)
+# baked in by layout, so no style-crate edge exists. Rasterization lives
+# behind the display list: the PAINT --> GFX edge (CPU raster) arrives with
+# the raster/golden-image batch; this crate performs no I/O and has no
+# external dependencies (no ADR required — ADR-0003 decision 1 already
+# sanctions the display-list pipeline).
+#
+# Roadmap phase: 3. ADR-0003 (rendering architecture: display-list
+# pipeline), docs/architecture/rendering-pipeline.md §1 (stage contract)
+# and §4 (paint/raster), dependency-graph.md §1 (PAINT row).
+
+[dependencies]
+veyra-layout = { path = "../veyra-layout" }
+
+# Integration tests build full documents end-to-end (parse → style →
+# layout → display list); they are test-surface consumers, not engine
+# edges.
+[dev-dependencies]
+veyra-dom = { path = "../veyra-dom" }
+veyra-html = { path = "../veyra-html" }
+veyra-url = { path = "../veyra-url" }
+veyra-style = { path = "../veyra-style" }
+
+[lints]
+workspace = true
