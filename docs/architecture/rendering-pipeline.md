@@ -50,9 +50,15 @@ until isolation exists) are policy, not surgery.
 
 ## 2. Text and fonts
 
-`veyra-text` wraps the Linebender stack (parley/fontique) + rustybuzz
-shaping + unicode-bidi: itemization → bidi reordering → shaping runs →
-cluster maps handed to inline layout. Determinism rules for tests: a pinned
+`veyra-text` owns the text stack (ADR-0015): rustybuzz shaping (the
+HarfBuzz port — GSUB/GPOS, verified against the bundled faces) over
+ttf-parser font data, unicode-bidi for UAX#9 levels/visual runs, and
+unicode-segmentation for UAX#29 boundaries — all behind Veyra-owned
+types so shaper churn stays in one crate. Font collection is explicit
+(the embedded default set — bundled DejaVu faces — plus loaded
+sources); parley (a paragraph layout engine, which would duplicate the
+custom IFC) and fontique (system enumeration + fallback breadth) are
+deferred with recorded rationale. Determinism rules for tests: a pinned
 bundled font set for fixtures (platform font discovery disabled in test
 mode); rasterization identical across runs (no subpixel randomness). Full
 CSS Text line-breaking (UAX#14 via css-text) and vertical writing are

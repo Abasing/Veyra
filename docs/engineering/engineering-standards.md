@@ -80,6 +80,7 @@ parser crate is not mandatory for a docs-only change.
 | Nesting depth (elements) | 512 | veyra-html |
 | Stylesheet size | 16 MiB | veyra-style |
 | Layout boxes + inline items + tokens + fragments (per run) | 200,000 | veyra-layout |
+| Shaping run (single `shape` call) | 2,000,000 scalars | veyra-text |
 | Response body (unbounded streams aside) | 2 GiB streamed, memory-capped buffers | veyra-net |
 | Redirect chain | 20 | veyra-net |
 | Header count/size | 128 / 64 KiB | veyra-net |

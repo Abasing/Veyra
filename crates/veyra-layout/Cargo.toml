@@ -10,23 +10,21 @@ authors.workspace = true
 # Boundary justification (docs/architecture/dependency-graph.md §1): layout
 # consumes computed styles (LAYOUT --> STYLE) and the DOM tree (via the style
 # map's node ids); it depends on no service crate and performs no I/O. Text
-# measurement is a provider seam (`TextMeasurer`): the dependency-graph edge
-# LAYOUT --> TEXT materializes when `veyra-text` adopts the Linebender stack
-# (its own ADR'd batch); until then `FixedMetrics` — a deterministic, fully
-# specified fixed-advance provider — serves the shell and tests. This batch
-# adds no external dependencies (ADR-0003 decision 3 already sanctions the
-# custom block/inline implementation; no ADR is required for a dependency-
-# free crate).
+# measurement goes through the `TextMeasurer` seam; the dependency-graph edge
+# LAYOUT --> TEXT is realized here against `veyra-text` (ADR-0015):
+# `ShapedMetrics` wraps the font library and shapes runs for real metrics,
+# while `FixedMetrics` — the deterministic, fully specified fixed-advance
+# provider — remains the fallback and the golden-fixture provider.
 #
 # Roadmap phase: 3. ADR-0003 (rendering architecture: custom block+inline
 # layout, taffy deferred to the flexbox batch), ADR-0014 (Phase 3 entry
-# spike), docs/architecture/dependency-graph.md §1 (LAYOUT row),
-# docs/architecture/rendering-pipeline.md §3 (layout strategy, R3 axis
-# abstraction).
+# spike), ADR-0015 (text stack adoption), docs/architecture/dependency-graph.md
+# §1 (LAYOUT/TEXT rows), docs/architecture/rendering-pipeline.md §2–3.
 
 [dependencies]
 veyra-dom = { path = "../veyra-dom" }
 veyra-style = { path = "../veyra-style" }
+veyra-text = { path = "../veyra-text" }
 
 # Doc tests and unit tests build full documents end-to-end (parse → style
 # → layout); they are test-surface consumers, not engine edges.

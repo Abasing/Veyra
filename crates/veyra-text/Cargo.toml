@@ -1,0 +1,30 @@
+[package]
+name = "veyra-text"
+description = "Veyra's text stack: font collection, shaping, bidi, and run metrics (ADR-0015)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+# Boundary justification (docs/architecture/dependency-graph.md §1): veyra-text
+# is a leaf-ish content-layer crate — it depends on no engine crate (the
+# LAYOUT --> TEXT edge is realized by veyra-layout, which wraps this crate's
+# FontLibrary behind its TextMeasurer seam). External surfaces are isolated
+# per §5: rustybuzz/ttf-parser types never appear in public APIs (shape
+# results are Veyra-owned ShapedRun/ShapedGlyph).
+#
+# Roadmap phase: 3. ADR-0015 (text stack adoption: rustybuzz for shaping,
+# ttf-parser for font data, unicode-bidi for UAX#9 levels,
+# unicode-segmentation for UAX#29 boundaries; parley/fontique deferred with
+# rationale), ADR-0003 (rendering architecture — text row),
+# docs/architecture/rendering-pipeline.md §2, dependency-graph.md §2 (Text row).
+
+[dependencies]
+ttf-parser = { version = "0.25", default-features = false, features = ["std"] }
+rustybuzz = { version = "0.20", default-features = false, features = ["std"] }
+unicode-bidi = "0.3"
+unicode-segmentation = "1.12"
+
+[lints]
+workspace = true

@@ -29,7 +29,7 @@
 //! keyframe selectors. Declaration values flow two ways: retained as a
 //! [`RetainedValue`] (canonical serialization, custom properties are
 //! CSS), and — from batch 2 — parsed into typed longhands and computed
-//! by the cascade (see [`cascade`]).
+//! by the cascade (see the `cascade` module).
 //!
 //! # Scope notes (deliberate deferrals, each with a roadmap home)
 //!

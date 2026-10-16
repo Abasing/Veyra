@@ -325,20 +325,28 @@ fn run_open_command(
     Ok(())
 }
 
+/// The process-wide shaped measurement provider: the embedded default
+/// font set (bundled DejaVu faces, compiled in) built once and shared.
+/// Deterministic across machines — no platform font discovery, no disk
+/// access (ADR-0015).
+fn shaped_metrics() -> &'static veyra_layout::ShapedMetrics {
+    static SHAPED: std::sync::OnceLock<veyra_layout::ShapedMetrics> = std::sync::OnceLock::new();
+    SHAPED.get_or_init(veyra_layout::ShapedMetrics::embedded_defaults)
+}
+
 /// Formats the fragment-tree layout report (`open --layout`): the
-/// document is laid out at the shell's default viewport with the
-/// deterministic fixed-metrics text provider (the interim measurement
-/// contract — the veyra-text batch replaces it behind the same trait).
-/// A layout failure (limits) is a typed error, surfaced like a load
-/// failure: the engine could not produce a render tree within its
-/// resource budget.
+/// document is laid out at the shell's default viewport with the shaped
+/// text provider (real font metrics through the `TextMeasurer` seam —
+/// the LAYOUT --> TEXT edge, ADR-0015). A layout failure (limits) is a
+/// typed error, surfaced like a load failure: the engine could not
+/// produce a render tree within its resource budget.
 fn format_layout_report(document: &browser::loader::LoadedDocument) -> Result<String, String> {
     let viewport = config::Config::default().window;
     let result = veyra_layout::layout_document(
         &document.tree,
         &document.styles.computed,
         (viewport.width, viewport.height),
-        &veyra_layout::FixedMetrics,
+        shaped_metrics(),
         veyra_layout::LayoutLimits::default(),
     )
     .map_err(|error| error.to_string())?;

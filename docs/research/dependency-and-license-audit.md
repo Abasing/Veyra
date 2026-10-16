@@ -63,9 +63,11 @@ every row below is a *candidate to be evaluated at its phase gate*.
 | `selectors` | MPL-2.0 | 0.41.0 | 86.5M | 2026-09-30 | **Adopted Phase 3** (ADR-0003/0014; MPL-2.0 allow-listed). Selector matching behind `veyra-style`. |
 | `stylo` | MPL-2.0 | 0.22.0 | 405.4K | 2026-09-30 | Extracted Gecko style engine; **deferred** — ADR-0014 spike measured the integration surface (~318 methods / 12 surfaces / 137-package probe lock); revisit Phase 7+. |
 | `taffy` | MIT | 0.15.0 | 16.3M | 2026-10-12 | Flexbox + Grid; **Phase 3 candidate**. Block/inline layout not covered — custom work. |
-| `parley` / `fontique` | Apache-2.0 OR MIT | 0.12.0 | 4.1M | 2026-10-09 | Linebender text stack (shaping orchestration, fallback, font enumeration) — Phase 3. |
-| `rustybuzz` | MIT | 0.20.1 | 34.7M | 2024-11-12 | HarfBuzz-shaped shaping in Rust — Phase 3. (Update cadence slow = stable.) |
-| `ttf-parser` | MIT OR Apache-2.0 | 0.25.1 | 118.6M | 2024-11-29 | SFNT parsing. |
+| `parley` / `fontique` | Apache-2.0 OR MIT | 0.12.0 | 4.1M | 2026-10-09 | Linebender text stack (shaping orchestration, fallback, font enumeration) — **deferred** (ADR-0015: parley is a paragraph layout engine and would duplicate the custom IFC; fontique's system enumeration conflicts with the determinism contract until fallback breadth is the active batch — Phase 7). |
+| `rustybuzz` | MIT | 0.20.1 | 35.1M | 2024-11-12 | **Adopted Phase 3** (ADR-0015). Shaping engine behind `veyra-text`; shaper types never escape the crate. |
+| `ttf-parser` | MIT OR Apache-2.0 | 0.25.1 | 119.7M | 2024-11-29 | **Adopted Phase 3** (ADR-0015). Face parsing/metrics/`cmap` behind `veyra-text` (shares the parse layer with rustybuzz). |
+| `unicode-bidi` | Apache-2.0 OR MIT | 0.3.18 | 539.2M | 2024-12-16 | **Adopted Phase 3** (ADR-0015). UAX#9 levels + L2 visual runs behind `veyra-text::bidi`. |
+| `unicode-segmentation` | MIT OR Apache-2.0 | 1.13.3 | 612.5M | 2026-06-01 | **Adopted Phase 3** (ADR-0015). UAX#29 boundaries for the itemization batches. |
 | `swash` | Apache-2.0 OR MIT | 0.2.10 | 15.6M | 2026-07-17 | Text scaling/rasterization. |
 | `fontdb` | MIT | 0.24.0 | 38.3M | 2026-07-29 | System font discovery. |
 | `cosmic-text` | MIT OR Apache-2.0 | 0.19.0 | 10.3M | 2026-04-22 | Alternative text stack; evaluated against parley at Phase 3. |

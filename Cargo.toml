@@ -16,6 +16,7 @@ members = [
     "crates/veyra-net",
     "crates/veyra-style",
     "crates/veyra-layout",
+    "crates/veyra-text",
 ]
 
 [workspace.package]

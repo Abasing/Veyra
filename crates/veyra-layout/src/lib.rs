@@ -33,12 +33,12 @@
 //!
 //! # The measurement seam
 //!
-//! Text measurement goes through [`TextMeasurer`]. The production
-//! provider is `veyra-text` (Linebender stack, its own ADR'd batch — the
-//! dependency-graph `LAYOUT --> TEXT` edge); today
-//! [`FixedMetrics`] provides the fully specified deterministic
-//! approximation (module docs carry the exact arithmetic) the shell and
-//! tests use.
+//! Text measurement goes through [`TextMeasurer`]. The shaped provider is
+//! [`ShapedMetrics`], which realizes the dependency-graph `LAYOUT --> TEXT`
+//! edge over `veyra-text` (ADR-0015): real font matching and shaping with
+//! the embedded DejaVu default set. [`FixedMetrics`] remains the fully
+//! specified fixed-advance approximation — the golden-fixture provider and
+//! the shaped provider's deterministic fallback.
 //!
 //! # Security posture
 //!
@@ -102,7 +102,7 @@ pub use error::LayoutError;
 pub use fragment::{BoxFragment, Fragment, LayoutResult, TextFragment};
 pub use geometry::{LogicalOffset, LogicalSize, PhysicalRect, WritingMode};
 pub use limits::{LayoutLimits, MAX_BOXES};
-pub use text::{FixedMetrics, FontQuery, LineMetrics, TextMeasurer};
+pub use text::{FixedMetrics, FontQuery, LineMetrics, ShapedMetrics, TextMeasurer};
 
 /// The budget shared across box-tree construction and layout (the
 /// limits-table row bounds the *whole run*, both phases together).

@@ -1,6 +1,6 @@
 # Veyra Dependency Graph
 
-status: Updated (Phase 1) | last-updated: 2026-10-15 | companion-to: system-overview.md
+status: Updated (Phase 3) | last-updated: 2026-10-17 | companion-to: system-overview.md
 
 This document defines the **allowed dependency directions** between Veyra
 crates and the invariants that keep them honest. It is the contract CI and
@@ -9,8 +9,11 @@ Phase 8. Current tree (Phase 3): `veyra-doctor` (tooling), `veyra-gfx`
 (CPU raster), `veyra-shell` (application root; owns the navigation/session
 browser layer), `veyra-url` (parsing authority), `veyra-dom` (arena tree),
 `veyra-html` (HTML parsing), `veyra-net` (network service), `veyra-style`
-(CSS parsing/cascade), `veyra-layout` (block/inline layout; text
-measurement is the `TextMeasurer` seam until `veyra-text` arrives).
+(CSS parsing/cascade), `veyra-layout` (block/inline layout), and
+`veyra-text` (font collection, shaping, bidi — ADR-0015; the `LAYOUT -->
+TEXT` edge is realized: layout's `ShapedMetrics` measures through the
+shared `FontLibrary`, with `FixedMetrics` as the deterministic fallback
+and golden-fixture provider).
 
 ## 1. Engine-crate dependency rules
 
@@ -109,7 +112,7 @@ Consolidated from the dependency audit; each row's adoption is phase-gated:
 | Async/runtime | tokio | services only |
 | HTTP/TLS/DNS | hyper, h2, rustls, rustls-platform-verifier, hickory-resolver | Phase 2 |
 | HTML | html5ever | Phase 2 (ADR-0003) |
-| Text | parley, fontique, rustybuzz, ttf-parser, swash, fontdb, unicode-bidi, unicode-segmentation | Phase 3 |
+| Text | rustybuzz, ttf-parser, unicode-bidi, unicode-segmentation (adopted Phase 3, ADR-0015); parley/fontique deferred with recorded rationale | shaping types never leave `veyra-text` (§5) |
 | CSS/layout | cssparser/selectors (MPL gate) or stylo; taffy | Phase 3 (ADR-0003) |
 | Graphics | tiny-skia; wgpu; (vello eval) | Phase 3/7 (ADR-0005) |
 | SVG/images | resvg/usvg, image | Phase 7 |
@@ -142,12 +145,16 @@ The current tree contains `veyra-doctor`, `veyra-gfx` (Phase 1, brought
 forward per roadmap — ADR-0005/0012), `veyra-shell` (Phase 1,
 ADR-0007/0012; Phase 2 adds the browser layer), `veyra-url`,
 `veyra-dom`, `veyra-html`, and `veyra-net` (Phase 2 — ADR-0008/0013),
-and `veyra-style` (Phase 3 — ADR-0003/0014: parsing consumes
+`veyra-style` (Phase 3 — ADR-0003/0014: parsing consumes
 cssparser/selectors at the crate boundary; the batch-2 cascade activates
 the `DOM --> STYLE` and `STYLE --> URL` edges — matching adapts
 `veyra-dom` elements to the `selectors` matcher, and `@import`/base-URL
-resolution goes through `veyra-url`); every other row in §1's diagram is
-a target state, and
+resolution goes through `veyra-url`), `veyra-layout` (Phase 3 — ADR-0003
+decision 3: custom block/inline; box-tree, BFC/IFC, intrinsic sizing),
+and `veyra-text` (Phase 3 — ADR-0015: rustybuzz/ttf-parser/unicode-bidi
+behind Veyra-owned types; the `LAYOUT --> TEXT` edge activates via
+`veyra-layout`'s `ShapedMetrics` adapter); every other row in §1's
+diagram is a target state, and
 the review checklist rejects PRs that add crates without both the
 roadmap phase and an ADR reference. When a boundary
 turns out wrong in practice (cohesion signals: types imported solely to
@@ -169,7 +176,7 @@ local change:
 | `boa_engine` | `veyra-script` | engine types never leave the facade (ADR-0002) |
 | `wgpu`/`tiny-skia`/`vello` | `veyra-gfx` | device/queue types never leave the trait |
 | `redb` | `veyra-storage` | database handles are crate-private |
-| `parley`/`rustybuzz`/`swash` | `veyra-text` | shaped-run types are internal |
+| `parley`/`rustybuzz`/`swash` | `veyra-text` | shaped-run types are internal (currently: rustybuzz/ttf-parser per ADR-0015) |
 | `tokio` | services only | engine core stays synchronous |
 
 This is what converts "dependency risk" into "one-file swap": the audit
