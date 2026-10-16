@@ -8,9 +8,12 @@
 //! Phase 2 adds the first real document pipeline — `veyra-shell open`
 //! loads URLs (or `file://` paths) through the navigation pipeline and
 //! prints DOM dumps; session history and crash-safe session persistence
-//! work. **The window still shows the diagnostic pattern**: web-content
-//! rendering (layout, text, paint) is Phase 3, and there is no CSS or
-//! JavaScript. Capability claims live only in
+//! work. Phase 3 (batches 1-3) puts the CSS cascade behind it: every
+//! loaded document collects its `<style>`/`<link>` sheets (with guarded
+//! `@import` following), builds the style set, and computes per-element
+//! styles (`open --styles` prints the report). **The window still shows
+//! the diagnostic pattern**: web-content rendering (layout, text, paint)
+//! is the remaining Phase 3 work. Capability claims live only in
 //! `docs/roadmap/compatibility-matrix.md`.
 //!
 //! Module map:
@@ -27,8 +30,9 @@
 //! - [`hashing`] — the canonical SHA-256 definition used by golden tests.
 //! - [`golden`] — golden-fixture mechanics shared by the integration tests.
 //! - [`browser`] — the Phase 2 browser layer: navigation/session state
-//!   machine, document loading (network via `veyra-net`, `file://` local),
-//!   crash-safe session files.
+//!   machine, document loading (network via `veyra-net`, `file://` local)
+//!   with the Phase 3 style pipeline (sheet collection, guarded
+//!   `@import` following, computed styles), crash-safe session files.
 //!
 //! [`FrameClock`]: clock::FrameClock
 //! [`clock::SystemFrameClock`]: clock::SystemFrameClock
@@ -75,9 +79,10 @@ pub fn execute(command: cli::Command) -> Result<(), error::ShellError> {
         cli::Command::Open {
             urls,
             dump_dom,
+            dump_styles,
             timeout_ms,
             session_file,
-        } => run_open_command(&urls, dump_dom, timeout_ms, session_file),
+        } => run_open_command(&urls, dump_dom, dump_styles, timeout_ms, session_file),
     }
 }
 
@@ -174,6 +179,7 @@ fn run_screenshot_command(
 fn run_open_command(
     urls: &[String],
     dump_dom: bool,
+    dump_styles: bool,
     timeout_ms: Option<u64>,
     session_file: Option<std::path::PathBuf>,
 ) -> Result<(), error::ShellError> {
@@ -189,36 +195,46 @@ fn run_open_command(
     let jar = veyra_net::Client::new_cookie_jar();
     let mut first_failure: Option<String> = None;
 
-    let visit =
-        |nav: &mut browser::NavigationController, url: &str| match veyra_url::Url::parse(url) {
-            Ok(parsed) => {
-                if let Err(error) = nav.navigate(parsed.clone()) {
-                    return Err(error.to_string());
+    let visit = |nav: &mut browser::NavigationController, url: &str| match veyra_url::Url::parse(
+        url,
+    ) {
+        Ok(parsed) => {
+            if let Err(error) = nav.navigate(parsed.clone()) {
+                return Err(error.to_string());
+            }
+            match browser::load_document(&parsed, &client, Some(&jar)) {
+                Ok(document) => {
+                    let status_text = document
+                        .status
+                        .map_or_else(|| "none".to_string(), |status| status.to_string());
+                    eprintln!(
+                        "loaded status={status_text} bytes={} sheets={} sheet-failures={} imports={}",
+                        document.byte_len,
+                        document.styles.report.sheets_loaded,
+                        document.styles.report.sheets_failed,
+                        document.styles.report.imports_followed,
+                    );
+                    println!("== {}", document.url.as_str());
+                    if dump_dom {
+                        print!("{}", veyra_html::dump_tree(&document.tree));
+                    }
+                    if dump_styles {
+                        print!("{}", format_style_report(&document));
+                    }
+                    let entry = browser::SessionEntry::from_document(&document);
+                    match nav.commit(entry) {
+                        Ok(()) => Ok(()),
+                        Err(error) => Err(error.to_string()),
+                    }
                 }
-                match browser::load_document(&parsed, &client, Some(&jar)) {
-                    Ok(document) => {
-                        let status_text = document
-                            .status
-                            .map_or_else(|| "none".to_string(), |status| status.to_string());
-                        eprintln!("loaded status={status_text} bytes={}", document.byte_len);
-                        println!("== {}", document.url.as_str());
-                        if dump_dom {
-                            print!("{}", veyra_html::dump_tree(&document.tree));
-                        }
-                        let entry = browser::SessionEntry::from_document(&document);
-                        match nav.commit(entry) {
-                            Ok(()) => Ok(()),
-                            Err(error) => Err(error.to_string()),
-                        }
-                    }
-                    Err(error) => {
-                        let _ = nav.fail();
-                        Err(error.to_string())
-                    }
+                Err(error) => {
+                    let _ = nav.fail();
+                    Err(error.to_string())
                 }
             }
-            Err(error) => Err(error.to_string()),
-        };
+        }
+        Err(error) => Err(error.to_string()),
+    };
 
     for url in urls {
         if let Err(message) = visit(&mut nav, url) {
@@ -278,4 +294,110 @@ fn run_open_command(
         return Err(error::ShellError::LoadFailed(message));
     }
     Ok(())
+}
+
+/// Formats the per-element computed-style report (`open --styles`): one
+/// deterministic line per element in document order, carrying the
+/// working-set properties the later layout/paint batches consume. The
+/// element path is the pre-order chain of local names; every value is
+/// the computed (cascade-resolved) form.
+fn format_style_report(document: &browser::loader::LoadedDocument) -> String {
+    use veyra_dom::{NodeData, NodeId};
+    use veyra_style::{Display, LengthPercent, MarginSizing, Sizing};
+
+    let mut out = String::new();
+    let Some(document_node) = document.tree.document() else {
+        return out;
+    };
+
+    fn color_hex(color: veyra_style::Color) -> String {
+        format!(
+            "#{:02x}{:02x}{:02x}{:02x}",
+            color.r, color.g, color.b, color.a
+        )
+    }
+
+    fn length_text(value: &LengthPercent) -> String {
+        match value {
+            LengthPercent::Px(px) => format!("{px}px"),
+            LengthPercent::Percent(p) => format!("{p}%"),
+            // Computed values resolve em/rem to px; these remain only
+            // for font-size-relative spec forms the cascade keeps.
+            LengthPercent::Em(factor) => format!("{factor}em"),
+            LengthPercent::Rem(rem) => format!("{rem}rem"),
+        }
+    }
+
+    fn margin_text(value: &MarginSizing) -> String {
+        match value {
+            MarginSizing::Auto => "auto".to_string(),
+            MarginSizing::LengthPercent(length) => length_text(length),
+        }
+    }
+
+    fn sizing_text(value: &Sizing) -> String {
+        match value {
+            Sizing::Auto => "auto".to_string(),
+            Sizing::LengthPercent(length) => length_text(length),
+        }
+    }
+
+    fn display_text(display: Display) -> &'static str {
+        match display {
+            Display::None => "none",
+            Display::Block => "block",
+            Display::Inline => "inline",
+            Display::InlineBlock => "inline-block",
+        }
+    }
+
+    // Iterative pre-order walk with element paths (no recursion on
+    // tree depth — the same discipline as the DOM traversals).
+    let mut ordinal = 0usize;
+    let mut stack: Vec<(NodeId, String)> = vec![(document_node, String::new())];
+    while let Some((id, parent_path)) = stack.pop() {
+        let children = document.tree.children(id).unwrap_or(&[]);
+        for child in children.iter().rev() {
+            let name = match document.tree.data(*child) {
+                Some(NodeData::Element { name, .. }) => name.local.clone(),
+                Some(_) => {
+                    // Text/comment/doctype nodes carry no styles; still
+                    // walk their children (none) — nothing to do.
+                    continue;
+                }
+                None => continue,
+            };
+            ordinal += 1;
+            let path = if parent_path.is_empty() {
+                name.clone()
+            } else {
+                format!("{parent_path}>{name}")
+            };
+            let Some(style) = document.styles.computed.get(*child) else {
+                continue;
+            };
+            out.push_str(&format!(
+                "style {path}[{ordinal}]: display={} color={} background={} font-size={}px weight={} text-align={:?} width={} height={} margin={}/{}/{}/{} padding={}/{}/{}/{}\n",
+                display_text(style.display),
+                color_hex(style.color),
+                color_hex(style.background_color),
+                style.font_size,
+                style.font_weight,
+                style.text_align,
+                sizing_text(&style.width),
+                sizing_text(&style.height),
+                margin_text(&style.margin.top),
+                margin_text(&style.margin.right),
+                margin_text(&style.margin.bottom),
+                margin_text(&style.margin.left),
+                length_text(&style.padding.top),
+                length_text(&style.padding.right),
+                length_text(&style.padding.bottom),
+                length_text(&style.padding.left),
+            ));
+            let child_path = path;
+            stack.push((*child, child_path));
+        }
+    }
+    out
 }

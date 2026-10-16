@@ -3027,6 +3027,7 @@ dependencies = [
  "veyra-gfx",
  "veyra-html",
  "veyra-net",
+ "veyra-style",
  "veyra-url",
  "winit",
 ]

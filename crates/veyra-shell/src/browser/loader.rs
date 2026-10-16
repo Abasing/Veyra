@@ -11,6 +11,7 @@ use veyra_dom::Tree;
 use veyra_url::{Origin, Url};
 
 use crate::browser::navigation::SessionEntry;
+use crate::browser::style_loader::{self, DocumentStyles};
 
 /// A loaded document: parsed tree plus the metadata navigation records.
 pub struct LoadedDocument {
@@ -25,6 +26,11 @@ pub struct LoadedDocument {
     /// The body size in bytes (post-decode for files, network size for
     /// HTTP).
     pub byte_len: usize,
+    /// The document's computed styles (batch 3): the UA sheet plus the
+    /// document's `<style>`/`<link>` sheets (and their `@import`
+    /// closure), cascaded over the tree. Sheet-level failures are
+    /// diagnostics (see [`DocumentStyles::report`]), never load errors.
+    pub styles: DocumentStyles,
 }
 
 /// Load failure (typed; transport details ride along for diagnostics).
@@ -83,12 +89,15 @@ pub fn load_document(
             let origin = resource.origin();
             let tree = veyra_html::parse_document(&resource.body, origin.clone())
                 .map_err(LoadError::Parse)?;
+            let styles =
+                style_loader::load_document_styles(&tree, &resource.final_url, client, jar);
             Ok(LoadedDocument {
                 url: resource.final_url,
                 origin,
                 status: Some(resource.status),
                 tree,
                 byte_len: resource.body.len(),
+                styles,
             })
         }
         "file" => {
@@ -100,12 +109,14 @@ pub fn load_document(
             let origin = url.origin();
             let tree =
                 veyra_html::parse_document(&bytes, origin.clone()).map_err(LoadError::Parse)?;
+            let styles = style_loader::load_document_styles(&tree, url, client, jar);
             Ok(LoadedDocument {
                 url: url.clone(),
                 origin,
                 status: None,
                 tree,
                 byte_len: bytes.len(),
+                styles,
             })
         }
         other => Err(LoadError::UnsupportedScheme(other.to_string())),

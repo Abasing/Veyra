@@ -478,7 +478,20 @@ fn prepare_rules(
 /// screen renderer; every other type, any feature test, and any
 /// `and`/`or` composition does not.
 fn media_prelude_matches(prelude: &RetainedValue) -> bool {
-    let text = prelude.to_css_string_trimmed();
+    media_text_matches(&prelude.to_css_string_trimmed())
+}
+
+/// The degenerate media-query evaluation for a raw media string (the
+/// `media` attribute on `<style>`/`<link>`; the same subset as the
+/// `@media` prelude evaluation). Empty text matches (the attribute's
+/// missing-value default is `all`).
+#[must_use]
+pub fn media_query_applies(media: &str) -> bool {
+    media_text_matches(media)
+}
+
+/// The text-level evaluator both call paths share.
+fn media_text_matches(text: &str) -> bool {
     if text.trim().is_empty() {
         return true;
     }

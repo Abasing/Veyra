@@ -12,6 +12,7 @@
 pub mod loader;
 pub mod navigation;
 pub mod session;
+pub mod style_loader;
 
 pub use loader::{LoadError, LoadedDocument, load_document};
 pub use navigation::{NavPhase, NavigationController, NavigationError, SessionEntry};
@@ -19,3 +20,4 @@ pub use session::{
     SessionError, SessionFileState, entries_from_state, load_session, state_from_history,
     write_session,
 };
+pub use style_loader::{DocumentStyles, StyleLoadLimits, StyleLoadReport, load_document_styles};

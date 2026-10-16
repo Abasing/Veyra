@@ -35,11 +35,16 @@ pub enum Command {
     /// Load documents through the navigation pipeline (Phase 2): fetch
     /// (or read file://), parse to a DOM, dump it; then exercise session
     /// history (back/forward) and persist the session when requested.
+    /// Phase 3 batch 3 adds the cascade: sheets are collected, loaded,
+    /// and computed styles are available (`--styles`).
     Open {
         /// URLs to visit, in order (one or more).
         urls: Vec<String>,
         /// Print the html5lib-format DOM dump for each visited document.
         dump_dom: bool,
+        /// Print the per-element computed-style report for each visited
+        /// document.
+        dump_styles: bool,
         /// Response deadline override, milliseconds.
         timeout_ms: Option<u64>,
         /// Write the final session history to this file.
@@ -215,6 +220,7 @@ fn parse_window(args: &[String]) -> Result<ParseOutcome, UsageError> {
 fn parse_open(args: &[String]) -> Result<ParseOutcome, UsageError> {
     let mut urls: Vec<String> = Vec::new();
     let mut dump_dom = false;
+    let mut dump_styles = false;
     let mut timeout_ms: Option<u64> = None;
     let mut session_file: Option<PathBuf> = None;
 
@@ -226,6 +232,12 @@ fn parse_open(args: &[String]) -> Result<ParseOutcome, UsageError> {
                     return Err(UsageError("--dump-dom given twice".to_string()));
                 }
                 dump_dom = true;
+            }
+            "--styles" => {
+                if dump_styles {
+                    return Err(UsageError("--styles given twice".to_string()));
+                }
+                dump_styles = true;
             }
             "--timeout-ms" => {
                 let value = take_value(args, i + 1, "--timeout-ms")?;
@@ -259,6 +271,7 @@ fn parse_open(args: &[String]) -> Result<ParseOutcome, UsageError> {
     Ok(ParseOutcome::Command(Command::Open {
         urls,
         dump_dom,
+        dump_styles,
         timeout_ms,
         session_file,
     }))
@@ -331,13 +344,17 @@ pub fn version_text() -> String {
 pub fn help_text() -> String {
     format!(
         "\
-veyra-shell — the Veyra application shell (Phases 1-2)
+veyra-shell — the Veyra application shell (Phases 1-3)
 
 Phase 1: a native window with a deterministic diagnostic test pattern and
 a headless screenshot harness. Phase 2: the first real document pipeline —
 `open` fetches a URL (or reads file://), parses the HTML into a DOM, and
 dumps it; session history (back/forward) and crash-safe session files
-work. The window does not render web content yet (that is Phase 3).
+work. Phase 3 (in progress): the CSS cascade runs over every loaded
+document — <style> and <link rel=stylesheet> sheets (with @import
+followed, guarded) are collected and computed per-element styles are
+available via `open --styles`. The window does not render web content
+yet (layout/paint are the remaining Phase 3 batches).
 
 USAGE:
     veyra-shell <COMMAND> [OPTIONS]
@@ -364,6 +381,10 @@ OPTIONS (screenshot only):
 OPTIONS (open only):
     --dump-dom          Print the html5lib-format DOM dump of every
                         visited document (stdout).
+    --styles            Print the per-element computed-style report of
+                        every visited document (stdout; UA sheet + the
+                        document's <style>/<link> sheets, @import
+                        followed with resource guards).
     --timeout-ms N      Response deadline override in milliseconds.
     --session-file PATH Write the final session history (JSON, written
                         atomically: temp + fsync + rename).

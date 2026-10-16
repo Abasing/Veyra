@@ -118,6 +118,7 @@ mod values;
 
 pub use cascade::{
     ComputedStyleMap, ImportRequest, Origin, StyleSet, compute_styles, compute_styles_with,
+    media_query_applies,
 };
 pub use declarations::{Declaration, DeclarationList};
 pub use error::{ParseError, SelectorErrorKind, SyntaxKind};
