@@ -22,16 +22,17 @@ authors.workspace = true
 # §1 (LAYOUT/TEXT rows), docs/architecture/rendering-pipeline.md §2–3.
 
 [dependencies]
-veyra-dom = { path = "../veyra-dom" }
-veyra-style = { path = "../veyra-style" }
-veyra-text = { path = "../veyra-text" }
+veyra-dom = { path = "../veyra-dom", version = "0.1.0" }
+veyra-style = { path = "../veyra-style", version = "0.1.0" }
+veyra-text = { path = "../veyra-text", version = "0.1.0" }
 
 # Doc tests and unit tests build full documents end-to-end (parse → style
 # → layout); they are test-surface consumers, not engine edges.
+# Versioned path deps (deny.toml bans wildcards) — publishable crate graph.
 [dev-dependencies]
-veyra-dom = { path = "../veyra-dom" }
-veyra-html = { path = "../veyra-html" }
-veyra-url = { path = "../veyra-url" }
+veyra-dom = { path = "../veyra-dom", version = "0.1.0" }
+veyra-html = { path = "../veyra-html", version = "0.1.0" }
+veyra-url = { path = "../veyra-url", version = "0.1.0" }
 
 [lints]
 workspace = true

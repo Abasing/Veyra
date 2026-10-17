@@ -31,6 +31,9 @@ use std::path::Path;
 use std::sync::Arc;
 
 use crate::error::TextError;
+use harfrust::font::name;
+use read_fonts::TableProvider;
+use read_fonts::tables::os2::SelectionFlags;
 
 /// A face within a [`FontLibrary`] (meaningful only for the library that
 /// issued it — ids are sequential registration indices).
@@ -107,30 +110,29 @@ pub struct FontInfo {
 
 impl FontInfo {
     /// Parses and validates `data` as a face, extracting the metadata the
-    /// library needs. Family names come from the `name` table: the first
-    /// decodable family (id 1) record wins (platform/language preference
-    /// beyond "decodable" is not modeled — recorded in ADR-0015).
+    /// library needs. Family names come from the `name` table: the English
+    /// family (id 1) record wins, the first record otherwise (deeper
+    /// platform/language preference is not modeled — recorded in ADR-0015).
     pub(crate) fn parse(data: Arc<[u8]>, index: u32) -> Result<Self, TextError> {
-        let face = ttf_parser::Face::parse(&data, index).map_err(|_| TextError::FaceParse)?;
+        let face = load_face(&data, index).ok_or(TextError::FaceParse)?;
         let family = face
             .names()
-            .into_iter()
-            .filter(|name| name.name_id == ttf_parser::name_id::FAMILY)
-            .find_map(|name| name.to_string())
+            .get(name::NameId::FAMILY_NAME)
+            .english_or_first()
+            .map(|localized| localized.name().to_string())
             .ok_or(TextError::FaceParse)?;
-        let style = match face.style() {
-            ttf_parser::Style::Normal => FontStyle::Normal,
-            ttf_parser::Style::Italic => FontStyle::Italic,
-            ttf_parser::Style::Oblique => FontStyle::Oblique,
-        };
+        let metrics = face.metrics();
+        // hhea line metrics, zeroed when the table is absent (the face
+        // stays usable for shaping; ascent/descent consumers get zeros).
+        let line = metrics.hhea_line.unwrap_or_default();
         Ok(FontInfo {
             family,
-            style,
-            weight: face.weight().to_number(),
+            style: classify_style(&data, index),
+            weight: os2_weight(&data, index),
             units_per_em: face.units_per_em(),
-            ascender: face.ascender(),
-            descender: face.descender(),
-            line_gap: face.line_gap(),
+            ascender: line.ascender.to_f64() as i16,
+            descender: line.descender.to_f64() as i16,
+            line_gap: line.line_gap.to_f64() as i16,
             data,
             index,
         })
@@ -180,12 +182,12 @@ impl FontInfo {
     }
 
     /// Whether the face's `cmap` maps `ch` to a glyph (coverage check for
-    /// future fallback logic). The `.notdef` glyph (id 0) is not coverage.
+    /// future fallback logic). The `.notdef` glyph (id 0) is not coverage
+    /// (the model charmap treats glyph-0 mappings as unmapped, so `Some`
+    /// here means real coverage).
     pub fn has_glyph(&self, ch: char) -> bool {
-        match ttf_parser::Face::parse(&self.data, self.index) {
-            Ok(face) => matches!(face.glyph_index(ch), Some(glyph) if glyph.0 != 0),
-            Err(_) => false,
-        }
+        load_face(&self.data, self.index)
+            .is_some_and(|face| face.charmap().map_unicode(ch).is_some())
     }
 
     /// Scales a font-unit quantity to px (strict `f32` math; `size` above
@@ -458,6 +460,52 @@ fn weight_preference_key(weight: u16, desired: u16) -> (u8, u16) {
     } else {
         (1, MAX - weight)
     }
+}
+
+/// Loads `data` (at collection `index`) as a harfrust model face — the
+/// lazy view over the shared buffer used for shaping and metadata. No
+/// bytes are copied: `Arc<[u8]>` cannot unsize-coerce to the trait-object
+/// form (its pointee `[u8]` is unsized), so the shared buffer rides
+/// inside one outer `Arc` — a pointer hop per view, never a copy. Returns
+/// `None` on bytes that are not a usable face (the caller turns that into
+/// [`TextError::FaceParse`] or a `false` coverage answer).
+pub(crate) fn load_face(data: &Arc<[u8]>, index: u32) -> Option<harfrust::Font> {
+    let shared: Arc<dyn AsRef<[u8]> + Send + Sync> = Arc::new(data.clone());
+    harfrust::Font::new(shared, index)
+}
+
+/// The face's OS/2 weight class, defaulting to 400 (Regular) when the
+/// table is absent — the default the CSS matching algorithm expects of
+/// an unspecified face.
+fn os2_weight(data: &Arc<[u8]>, index: u32) -> u16 {
+    read_fonts::FontRef::from_index(data, index)
+        .ok()
+        .and_then(|font| font.os2().ok())
+        .map_or(400, |os2| os2.us_weight_class())
+}
+
+/// The face's slant classification (ttf-parser-compatible semantics, so
+/// the CSS matching phase sees the same classes it did before the
+/// harfrust migration): OS/2 `fsSelection` ITALIC wins, then `fsSelection`
+/// OBLIQUE or a non-zero `post` italic angle (Oblique), else Normal.
+fn classify_style(data: &Arc<[u8]>, index: u32) -> FontStyle {
+    let Ok(font) = read_fonts::FontRef::from_index(data, index) else {
+        return FontStyle::Normal;
+    };
+    let selection = font.os2().map(|os2| os2.fs_selection()).ok();
+    if selection.is_some_and(|flags| flags.contains(SelectionFlags::ITALIC)) {
+        return FontStyle::Italic;
+    }
+    if selection.is_some_and(|flags| flags.contains(SelectionFlags::OBLIQUE)) {
+        return FontStyle::Oblique;
+    }
+    if font
+        .post()
+        .is_ok_and(|post| post.italic_angle().to_f64() != 0.0)
+    {
+        return FontStyle::Oblique;
+    }
+    FontStyle::Normal
 }
 
 #[cfg(test)]

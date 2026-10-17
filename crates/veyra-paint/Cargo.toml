@@ -21,16 +21,17 @@ authors.workspace = true
 # and §4 (paint/raster), dependency-graph.md §1 (PAINT row).
 
 [dependencies]
-veyra-layout = { path = "../veyra-layout" }
+veyra-layout = { path = "../veyra-layout", version = "0.1.0" }
 
 # Integration tests build full documents end-to-end (parse → style →
 # layout → display list); they are test-surface consumers, not engine
 # edges.
+# Versioned path deps (deny.toml bans wildcards) — publishable crate graph.
 [dev-dependencies]
-veyra-dom = { path = "../veyra-dom" }
-veyra-html = { path = "../veyra-html" }
-veyra-url = { path = "../veyra-url" }
-veyra-style = { path = "../veyra-style" }
+veyra-dom = { path = "../veyra-dom", version = "0.1.0" }
+veyra-html = { path = "../veyra-html", version = "0.1.0" }
+veyra-url = { path = "../veyra-url", version = "0.1.0" }
+veyra-style = { path = "../veyra-style", version = "0.1.0" }
 
 [lints]
 workspace = true

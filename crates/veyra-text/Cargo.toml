@@ -11,18 +11,21 @@ authors.workspace = true
 # is a leaf-ish content-layer crate — it depends on no engine crate (the
 # LAYOUT --> TEXT edge is realized by veyra-layout, which wraps this crate's
 # FontLibrary behind its TextMeasurer seam). External surfaces are isolated
-# per §5: rustybuzz/ttf-parser types never appear in public APIs (shape
+# per §5: harfrust/read-fonts types never appear in public APIs (shape
 # results are Veyra-owned ShapedRun/ShapedGlyph).
 #
-# Roadmap phase: 3. ADR-0015 (text stack adoption: rustybuzz for shaping,
-# ttf-parser for font data, unicode-bidi for UAX#9 levels,
-# unicode-segmentation for UAX#29 boundaries; parley/fontique deferred with
-# rationale), ADR-0003 (rendering architecture — text row),
+# Roadmap phase: 3. ADR-0015 (text stack adoption, as amended by ADR-0016:
+# rustybuzz/ttf-parser were declared unmaintained — RUSTSEC-2026-0192 — and
+# the stack migrated to harfrust, the HarfBuzz-org Rust port forked from
+# rustybuzz onto read-fonts' fontations parse foundation; read-fonts is a
+# direct dep for the OS/2/post table views the weight/style classification
+# needs, adding no lockfile entry — harfrust already pulls it), ADR-0003
+# (rendering architecture — text row),
 # docs/architecture/rendering-pipeline.md §2, dependency-graph.md §2 (Text row).
 
 [dependencies]
-ttf-parser = { version = "0.25", default-features = false, features = ["std"] }
-rustybuzz = { version = "0.20", default-features = false, features = ["std"] }
+harfrust = { version = "0.14", default-features = false, features = ["std"] }
+read-fonts = { version = "0.45", default-features = false, features = ["std"] }
 unicode-bidi = "0.3"
 unicode-segmentation = "1.12"
 

@@ -141,11 +141,13 @@ with block+inline (with `taffy` [E, MIT] providing flexbox/grid) and grows
 coverage by WPT area, not by feature checklist.
 
 **Text shaping and fonts:** shaping runs HarfBuzz-shaped algorithms (itemize
-by script, shape runs, cluster maps) [K]; Veyra candidates: `rustybuzz` (Rust
-HarfBuzz port, MIT), `swash` (scaling+rasterization), `parley`/`fontique`
+by script, shape runs, cluster maps) [K]; Veyra candidates: `harfrust` (the
+HarfBuzz-org Rust port — adopted Phase 3 via ADR-0016, superseding the
+rustybuzz candidate after RUSTSEC-2026-0192 declared it and `ttf-parser`
+unmaintained; MIT), `swash` (scaling+rasterization), `parley`/`fontique`
 (Linebender text stack: font enumeration, fallback, shaping orchestration,
 Apache-2.0 OR MIT) [E]. Bidi reordering per UAX#9 [ST18] via `unicode-bidi`.
-Fonts: SFNT parsing (`ttf-parser`), system font discovery (`fontdb`) with
+Fonts: SFNT parsing (`read-fonts`/`skrifa` — fontations), system font discovery (`fontdb`) with
 platform-specific gaps (DirectWrite/CoreText/fontconfig) noted as native
 integration points (see [ADR-0007](../decisions/0007-native-dependency-policy.md)).
 
@@ -249,7 +251,7 @@ mechanism** (Phase 1 exit criterion) — see [testing-and-performance.md](testin
 | DOM with shadow DOM/custom elements/observers | `veyra-dom` arena tree + spec mutation algorithms | 2, 5 |
 | Cascade/inheritance/computed values | `veyra-style` (stylo or cssparser+selectors per ADR-0003) | 3 |
 | Block/inline layout + intrinsic sizing | `veyra-layout` custom; flex/grid via `taffy` | 3, 7 |
-| Shaping/bidi/fallback fonts | `parley`+`rustybuzz`+`unicode-bidi` | 3, 7 |
+| Shaping/bidi/fallback fonts | `parley` deferred; `harfrust`+`read-fonts`+`unicode-bidi` (ADR-0015/0016) | 3, 7 |
 | Display list + paint order | `veyra-paint` | 3 |
 | Property trees/compositor scrolling | GPU compositor within `veyra-paint` + `veyra-gfx` (ADR-0005) | 7 |
 | Canvas/SVG/images | canvas module within `veyra-paint`; `resvg` integration | 7 |

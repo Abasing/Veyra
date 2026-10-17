@@ -64,8 +64,10 @@ every row below is a *candidate to be evaluated at its phase gate*.
 | `stylo` | MPL-2.0 | 0.22.0 | 405.4K | 2026-09-30 | Extracted Gecko style engine; **deferred** — ADR-0014 spike measured the integration surface (~318 methods / 12 surfaces / 137-package probe lock); revisit Phase 7+. |
 | `taffy` | MIT | 0.15.0 | 16.3M | 2026-10-12 | Flexbox + Grid; **Phase 3 candidate**. Block/inline layout not covered — custom work. |
 | `parley` / `fontique` | Apache-2.0 OR MIT | 0.12.0 | 4.1M | 2026-10-09 | Linebender text stack (shaping orchestration, fallback, font enumeration) — **deferred** (ADR-0015: parley is a paragraph layout engine and would duplicate the custom IFC; fontique's system enumeration conflicts with the determinism contract until fallback breadth is the active batch — Phase 7). |
-| `rustybuzz` | MIT | 0.20.1 | 35.1M | 2024-11-12 | **Adopted Phase 3** (ADR-0015). Shaping engine behind `veyra-text`; shaper types never escape the crate. |
-| `ttf-parser` | MIT OR Apache-2.0 | 0.25.1 | 119.7M | 2024-11-29 | **Adopted Phase 3** (ADR-0015). Face parsing/metrics/`cmap` behind `veyra-text` (shares the parse layer with rustybuzz). |
+| `harfrust` | MIT | 0.14.0 | 12.9M | 2026-10-04 | **Adopted Phase 3** (ADR-0016, supersedes ADR-0015's rustybuzz after RUSTSEC-2026-0192). HarfBuzz-org shaping port (forked from rustybuzz onto read-fonts; matches HB 14.5.1) behind `veyra-text`; shaper types never escape the crate. |
+| `read-fonts` | MIT OR Apache-2.0 | 0.45.1 | — | 2026-10-15 | **Adopted Phase 3** (ADR-0016). fontations parse foundation: OS/2/post table views + the model `Font` (names/charmap/metrics) behind `veyra-text`; no new lockfile entry (harfrust already pulls it). |
+| `rustybuzz` | MIT | 0.20.1 | 35.1M | 2024-11-12 | **Retired Phase 3** (ADR-0016): declared unmaintained (RUSTSEC-2026-0192); replaced by harfrust, its HarfBuzz-org successor. |
+| `ttf-parser` | MIT OR Apache-2.0 | 0.25.1 | 119.7M | 2024-11-29 | **Retired Phase 3** (ADR-0016): declared unmaintained (RUSTSEC-2026-0192); replaced by read-fonts. |
 | `unicode-bidi` | Apache-2.0 OR MIT | 0.3.18 | 539.2M | 2024-12-16 | **Adopted Phase 3** (ADR-0015). UAX#9 levels + L2 visual runs behind `veyra-text::bidi`. |
 | `unicode-segmentation` | MIT OR Apache-2.0 | 1.13.3 | 612.5M | 2026-06-01 | **Adopted Phase 3** (ADR-0015). UAX#29 boundaries for the itemization batches. |
 | `swash` | Apache-2.0 OR MIT | 0.2.10 | 15.6M | 2026-07-17 | Text scaling/rasterization. |

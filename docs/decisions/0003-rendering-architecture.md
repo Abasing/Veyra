@@ -44,8 +44,9 @@ way; the spike at Phase 3 entry quantifies it.
    Phase 2 with the same evidence bar.
 4. **Flexbox/Grid:** `taffy` provides the algorithms behind a Veyra
    interface layer; block/inline layout and intrinsic sizing are custom.
-5. **Text:** `parley`+`fontique`+`rustybuzz`+`unicode-bidi` in
-   `veyra-text`.
+5. **Text:** `parley`+`fontique`+`harfrust`+`unicode-bidi` in
+   `veyra-text` (the shaper choice moved from rustybuzz to harfrust by
+   ADR-0016 — RUSTSEC-2026-0192).
 
 ## Alternatives considered
 

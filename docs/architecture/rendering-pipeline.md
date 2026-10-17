@@ -50,11 +50,14 @@ until isolation exists) are policy, not surgery.
 
 ## 2. Text and fonts
 
-`veyra-text` owns the text stack (ADR-0015): rustybuzz shaping (the
-HarfBuzz port — GSUB/GPOS, verified against the bundled faces) over
-ttf-parser font data, unicode-bidi for UAX#9 levels/visual runs, and
-unicode-segmentation for UAX#29 boundaries — all behind Veyra-owned
-types so shaper churn stays in one crate. Font collection is explicit
+`veyra-text` owns the text stack (ADR-0015, as superseded in part by
+ADR-0016): harfrust shaping (the HarfBuzz-org Rust port — GSUB/GPOS,
+verified against the bundled faces with golden constants identical to
+the rustybuzz era) over read-fonts font data (the fontations parse
+foundation harfrust itself builds on), unicode-bidi for UAX#9
+levels/visual runs, and unicode-segmentation for UAX#29 boundaries —
+all behind Veyra-owned types so shaper churn stays in one crate. Font
+collection is explicit
 (the embedded default set — bundled DejaVu faces — plus loaded
 sources); parley (a paragraph layout engine, which would duplicate the
 custom IFC) and fontique (system enumeration + fallback breadth) are

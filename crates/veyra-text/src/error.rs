@@ -17,6 +17,11 @@ use crate::limits::MAX_RUN_CHARS;
 pub enum TextError {
     /// The provided bytes are not a parseable OpenType/TrueType face.
     FaceParse,
+    /// The face parsed, but the shaping engine rejected its layout tables
+    /// mid-run (malformed GSUB/GPOS/GDEF data that the load-time parse
+    /// tolerates but shaping cannot apply). The face stays loaded; shaping
+    /// it is a typed error, never a panic.
+    Shape,
     /// The [`FontId`](crate::font::FontId) does not name a face in this
     /// [`FontLibrary`](crate::font::FontLibrary) (it may belong to another
     /// library instance, or the face was never loaded).
@@ -37,6 +42,9 @@ impl fmt::Display for TextError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TextError::FaceParse => write!(f, "font bytes are not a parseable face"),
+            TextError::Shape => {
+                write!(f, "shaping failed on a malformed face (layout tables)")
+            }
             TextError::UnknownFont => write!(f, "font id is not in this library"),
             TextError::RunTooLong => {
                 write!(f, "shaping run exceeds the {MAX_RUN_CHARS}-character limit")

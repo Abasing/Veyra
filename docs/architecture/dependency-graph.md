@@ -115,7 +115,7 @@ Consolidated from the dependency audit; each row's adoption is phase-gated:
 | Async/runtime | tokio | services only |
 | HTTP/TLS/DNS | hyper, h2, rustls, rustls-platform-verifier, hickory-resolver | Phase 2 |
 | HTML | html5ever | Phase 2 (ADR-0003) |
-| Text | rustybuzz, ttf-parser, unicode-bidi, unicode-segmentation (adopted Phase 3, ADR-0015); parley/fontique deferred with recorded rationale | shaping types never leave `veyra-text` (§5) |
+| Text | harfrust, read-fonts, unicode-bidi, unicode-segmentation (adopted Phase 3, ADR-0015 as superseded in part by ADR-0016 — the RUSTSEC-2026-0192 migration; parley/fontique deferred with recorded rationale) | shaping types never leave `veyra-text` (§5) |
 | CSS/layout | cssparser/selectors (MPL gate) or stylo; taffy | Phase 3 (ADR-0003) |
 | Graphics | tiny-skia; wgpu; (vello eval) | Phase 3/7 (ADR-0005) |
 | SVG/images | resvg/usvg, image | Phase 7 |
@@ -154,7 +154,7 @@ the `DOM --> STYLE` and `STYLE --> URL` edges — matching adapts
 `veyra-dom` elements to the `selectors` matcher, and `@import`/base-URL
 resolution goes through `veyra-url`), `veyra-layout` (Phase 3 — ADR-0003
 decision 3: custom block/inline; box-tree, BFC/IFC, intrinsic sizing),
-and `veyra-text` (Phase 3 — ADR-0015: rustybuzz/ttf-parser/unicode-bidi
+and `veyra-text` (Phase 3 — ADR-0015/0016: harfrust/read-fonts/unicode-bidi
 behind Veyra-owned types; the `LAYOUT --> TEXT` edge activates via
 `veyra-layout`'s `ShapedMetrics` adapter), and `veyra-paint` (Phase 3 —
 no ADR required: dependency-free crate per ADR-0003 decision 1's
@@ -182,7 +182,7 @@ local change:
 | `boa_engine` | `veyra-script` | engine types never leave the facade (ADR-0002) |
 | `wgpu`/`tiny-skia`/`vello` | `veyra-gfx` | device/queue types never leave the trait |
 | `redb` | `veyra-storage` | database handles are crate-private |
-| `parley`/`rustybuzz`/`swash` | `veyra-text` | shaped-run types are internal (currently: rustybuzz/ttf-parser per ADR-0015) |
+| `parley`/`harfrust`/`swash` | `veyra-text` | shaped-run types are internal (currently: harfrust + read-fonts per ADR-0015/0016) |
 | `tokio` | services only | engine core stays synchronous |
 
 This is what converts "dependency risk" into "one-file swap": the audit

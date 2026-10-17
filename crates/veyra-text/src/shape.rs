@@ -1,9 +1,10 @@
 //! Shaping: text + face + size → positioned glyphs.
 //!
-//! [`FontLibrary::shape`] wraps the shaping engine (rustybuzz — the
-//! HarfBuzz port adopted by ADR-0015) behind Veyra-owned result types:
-//! [`ShapedRun`]/[`ShapedGlyph`]. Engine types (buffers, glyph infos,
-//! faces) never escape the crate.
+//! [`FontLibrary::shape`] wraps the shaping engine (harfrust — the
+//! HarfBuzz-org Rust port adopted by ADR-0016, the successor of the
+//! rustybuzz adoption ADR-0015 originally recorded) behind Veyra-owned
+//! result types: [`ShapedRun`]/[`ShapedGlyph`]. Engine types (buffers,
+//! glyph infos, fonts) never escape the crate.
 //!
 //! # Semantics
 //!
@@ -109,23 +110,32 @@ impl FontLibrary {
         if text.chars().count() > MAX_RUN_CHARS {
             return Err(TextError::RunTooLong);
         }
-        let face =
-            rustybuzz::Face::from_slice(info.data(), info.index()).ok_or(TextError::FaceParse)?;
-        if face.units_per_em() <= 0 {
+        let face = crate::font::load_face(info.data(), info.index()).ok_or(TextError::FaceParse)?;
+        if face.units_per_em() == 0 {
             return Err(TextError::FaceParse);
         }
-        let scale = size / face.units_per_em() as f32;
+        let scale = size / f32::from(face.units_per_em());
 
-        let mut buffer = rustybuzz::UnicodeBuffer::new();
+        let shaper = harfrust::ShaperFont::new(&face);
+        let mut buffer = harfrust::Buffer::new();
         buffer.push_str(text);
         buffer.set_direction(match direction {
-            Direction::LeftToRight => rustybuzz::Direction::LeftToRight,
-            Direction::RightToLeft => rustybuzz::Direction::RightToLeft,
+            Direction::LeftToRight => harfrust::Direction::LeftToRight,
+            Direction::RightToLeft => harfrust::Direction::RightToLeft,
         });
-        let out = rustybuzz::shape(&face, &[], buffer);
+        // Fill script/language from the contents (direction stays as set):
+        // harfrust builds its plan from the buffer's properties as-is —
+        // unlike rustybuzz it does not guess internally, and a script-less
+        // plan selects no script shaper (no GSUB/GPOS application at all).
+        buffer.guess_segment_properties();
+        // harfrust shapes in place, in font units (no font-size property:
+        // scale manually — exactly this crate's contract); a rejection
+        // here is malformed layout tables, a typed error, never a panic.
+        harfrust::shape(&shaper, &mut buffer, harfrust::ShapeOptions::new())
+            .map_err(|_| TextError::Shape)?;
 
-        let infos = out.glyph_infos();
-        let positions = out.glyph_positions();
+        let infos = buffer.glyph_infos();
+        let positions = buffer.glyph_positions();
         let mut glyphs = Vec::with_capacity(infos.len());
         let mut advance = 0.0f32;
         for (glyph, position) in infos.iter().zip(positions.iter()) {

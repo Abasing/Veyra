@@ -190,7 +190,8 @@ vs stylo) **completed with recorded findings** before this phase starts.
 **Deliverables.** `veyra-style` (cascade origins/layers, inheritance,
 computed values, selector matching, invalidation sets v1);
 `veyra-layout` (BFC, IFC, intrinsic sizing modes); `veyra-text`
-(parley/fontique/rustybuzz/unicode-bidi); `veyra-paint` (display lists,
+(parley/fontique deferred; harfrust/read-fonts/unicode-bidi per
+ADR-0015/0016); `veyra-paint` (display lists,
 paint order); `veyra-gfx` CPU raster path wired to shell; flexbox via
 `taffy`; input hit testing (basic); logical-axis abstraction (R3).
 

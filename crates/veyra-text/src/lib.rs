@@ -2,11 +2,12 @@
 //!
 //! This crate owns the engine's text concerns behind Veyra-owned types
 //! ([`FontLibrary`], [`FontSpec`], [`ShapedRun`], [`Direction`]): the
-//! external shaping/parsing crates (rustybuzz, ttf-parser) and their types
+//! external shaping/parsing crates (harfrust, read-fonts) and their types
 //! never appear in public APIs, so a shaping-engine swap is a one-crate
 //! change (`docs/architecture/dependency-graph.md` §5). Adoption decisions
 //! and the deferred alternatives (parley, fontique) are recorded in
-//! ADR-0015.
+//! ADR-0015, as amended by ADR-0016 (the rustybuzz → harfrust migration
+//! after RUSTSEC-2026-0192 declared the original stack unmaintained).
 //!
 //! # Boundary
 //!

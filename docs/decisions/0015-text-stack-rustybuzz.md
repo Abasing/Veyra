@@ -1,6 +1,6 @@
 # ADR 0015: Text stack — rustybuzz shaping behind veyra-text; parley/fontique deferred
 
-- **Status:** Accepted
+- **Status:** Accepted — decision 1 superseded by [ADR-0016](0016-text-stack-migration-harfrust.md) (rustybuzz/ttf-parser declared unmaintained, RUSTSEC-2026-0192; migrated to harfrust + read-fonts with identical golden constants). Decisions 2–7 stand unchanged.
 - **Date:** 2026-10-17
 - **Deciders:** Veyra foundation
 
