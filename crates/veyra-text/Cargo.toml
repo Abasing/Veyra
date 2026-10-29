@@ -25,7 +25,7 @@ authors.workspace = true
 
 [dependencies]
 harfrust = { version = "0.14", default-features = false, features = ["std"] }
-read-fonts = { version = "0.45", default-features = false, features = ["std"] }
+read-fonts = { version = "0.46", default-features = false, features = ["std"] }
 unicode-bidi = "0.3"
 unicode-segmentation = "1.12"
 
